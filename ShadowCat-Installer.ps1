@@ -41,11 +41,6 @@ function Show-ShadowCatBanner {
    ____) | | | | (_| | (_| | (_) \ V  V /| |___| (_| | |_     > ^ <
   |_____/|_| |_|\__,_|\__,_|\___/ \_/\_/  \_____\__,_|\__|
 
-                          /\_/\
-                         ( o.o )
-                          > ^ <
-                          (   )~
-
 "@
     Write-Host $banner -ForegroundColor Blue
     Write-Host "    [+] Install Level: $InstallLevel" -ForegroundColor Yellow
