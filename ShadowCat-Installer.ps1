@@ -462,7 +462,7 @@ function Install-PythonPackages {
 }
 
 # Show installation summary
-function Create-ToolCategoryFolders {
+function New-ToolCategoryFolders {
     param([string]$BasePath)
     Write-ShadowCatLog "Creating categorized tool folders..." -Level "Header"
     $categories = $Global:ToolCategories.Values | Select-Object -Unique
@@ -484,7 +484,7 @@ function Set-DesktopBackground {
         # Set registry key for wallpaper
         Set-ItemProperty -Path 'HKCU:\Control Panel\Desktop' -Name Wallpaper -Value $wallpaperPath
         # Refresh desktop to apply wallpaper
-        rundll32.exe user32.dll,UpdatePerUserSystemParameters
+        rundll32.exe user32.dll,UpdatePerUserSystemParameters 1, True
         Write-ShadowCatLog "Desktop background set successfully." -Level "Success"
     } catch {
         Write-ShadowCatLog "Failed to set desktop background: $($_.Exception.Message)" -Level "Error"
@@ -618,10 +618,10 @@ function Start-Installation {
     }
 
     # Create categorized tool folders after installation
-    Create-ToolCategoryFolders -BasePath (Join-Path $InstallPath "Tools")
+    New-ToolCategoryFolders -BasePath (Join-Path $InstallPath "Tools")
 
     # Set custom desktop background (change URL as desired)
-    $wallpaperUrl = "https://raw.githubusercontent.com/azurekid/shadowcat/main/media/shadowcat_wallpaper.png"
+    $wallpaperUrl = "https://raw.githubusercontent.com/azurekid/shadowcat/main/docs/shadowcat_wallpaper.jpg"
     Set-DesktopBackground -ImageUrl $wallpaperUrl
 
     # Show final summary
