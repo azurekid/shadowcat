@@ -522,7 +522,6 @@ function Show-InstallationSummary {
     Write-Host "   3. Check tool-specific documentation for usage" -ForegroundColor White
     Write-Host "`n   Happy Hacking with ShadowCat! 🐱‍💻`n" -ForegroundColor Yellow
 }
-}
 
 # Main installation function
 function Start-Installation {
