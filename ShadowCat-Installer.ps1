@@ -2,7 +2,7 @@
 # Project ShadowCat - Enhanced Modular Security Toolkit
 # Advanced installer with dependency management and overlap prevention
 # ==============================================================================
-# 
+#
 # Author: Project BlackCat Team
 # Version: 2.0.0
 # License: MIT License
@@ -18,7 +18,8 @@ param(
     [switch]$Verbose,
     [switch]$ShowAvailableConfigs,
     [switch]$DryRun,
-    [switch]$ShowDependencies
+    [switch]$ShowDependencies,
+    [switch]$Online = $true
 )
 
 # Global variables for tracking
@@ -45,16 +46,16 @@ function Show-ShadowCatBanner {
                          ( o.o )
                           > ^ <
                           (   )~
-                                                                           
+
 ╔═══════════════════════════════════════════════════════════════════════╗
 ║                   Enhanced Security Toolkit v2.0.0                    ║
 ║                    Professional Multi-Level Edition                   ║
 ╚═══════════════════════════════════════════════════════════════════════╝
-    
+
 "@
     Write-Host $banner -ForegroundColor Red
     Write-Host "    [+] Install Level: $InstallLevel" -ForegroundColor Yellow
-    Write-Host "    [+] Dependency Resolution: Enabled" -ForegroundColor Yellow 
+    Write-Host "    [+] Dependency Resolution: Enabled" -ForegroundColor Yellow
     Write-Host "    [+] Overlap Prevention: Active" -ForegroundColor Yellow
     Write-Host "    [+] Project ShadowCat - Elite Security Solutions" -ForegroundColor Yellow
     Write-Host ""
@@ -67,7 +68,7 @@ function Write-ShadowCatLog {
         [ValidateSet("Info", "Success", "Warning", "Error", "Header", "Debug", "Dependency")]
         [string]$Level = "Info"
     )
-    
+
     $timestamp = Get-Date -Format "HH:mm:ss"
     $prefix = switch ($Level) {
         "Info"       { "[ShadowCat] [INFO]" }
@@ -78,7 +79,7 @@ function Write-ShadowCatLog {
         "Debug"      { "[ShadowCat] [DBG]" }
         "Dependency" { "[ShadowCat] [DEP]" }
     }
-    
+
     $color = switch ($Level) {
         "Info"       { "White" }
         "Success"    { "Green" }
@@ -88,47 +89,61 @@ function Write-ShadowCatLog {
         "Debug"      { "Gray" }
         "Dependency" { "Magenta" }
     }
-    
+
     if ($Level -eq "Debug" -and -not $Verbose) { return }
-    
+
     Write-Host "$timestamp $prefix $Message" -ForegroundColor $color
 }
 
 # Load configuration with enhanced validation
 function Import-ShadowCatConfig {
     param([string]$ConfigPath)
-    
+
     $fullPath = $ConfigPath
-    if (-not [System.IO.Path]::IsPathRooted($ConfigPath)) {
-        $fullPath = Join-Path (Join-Path $PSScriptRoot "configs") $ConfigPath
+    $configContent = $null
+
+    if ($Online) {
+        # Download config from GitHub main branch
+        $repoUrl = "https://raw.githubusercontent.com/azurekid/shadowcat/main/configs/$ConfigPath"
+        Write-ShadowCatLog "Downloading config from GitHub: $repoUrl" -Level "Info"
+        try {
+            $configContent = Invoke-WebRequest -Uri $repoUrl -UseBasicParsing | Select-Object -ExpandProperty Content
+        } catch {
+            Write-ShadowCatLog "Failed to download config: $($_.Exception.Message)" -Level "Error"
+            return $null
+        }
+    } else {
+        if (-not [System.IO.Path]::IsPathRooted($ConfigPath)) {
+            $fullPath = Join-Path (Join-Path $PSScriptRoot "configs") $ConfigPath
+        }
+        if (-not (Test-Path $fullPath)) {
+            Write-ShadowCatLog "Configuration file not found: $ConfigPath" -Level "Error"
+            return $null
+        }
+        $configContent = Get-Content $fullPath -Raw
     }
-    
-    if (-not (Test-Path $fullPath)) {
-        Write-ShadowCatLog "Configuration file not found: $ConfigPath" -Level "Error"
-        return $null
-    }
-    
+
     # Check if already processed
     if ($Global:ProcessedConfigs.ContainsKey($fullPath)) {
         Write-ShadowCatLog "Configuration already processed: $ConfigPath" -Level "Debug"
         return $Global:ProcessedConfigs[$fullPath]
     }
-    
+
     try {
-        $config = Get-Content $fullPath | ConvertFrom-Json
-        
+        $config = $configContent | ConvertFrom-Json
+
         # Enhanced validation
         if (-not $config.metadata) {
             Write-ShadowCatLog "Invalid configuration - missing metadata: $ConfigPath" -Level "Error"
             return $null
         }
-        
+
         # Add to processed configs
         $Global:ProcessedConfigs[$fullPath] = $config
-        
+
         Write-ShadowCatLog "Loaded configuration: $($config.metadata.name)" -Level "Success"
         Write-ShadowCatLog "Install Level: $($config.metadata.installLevel) | Dependencies: $($config.metadata.dependencies.Count)" -Level "Debug"
-        
+
         return $config
     }
     catch {
@@ -140,33 +155,33 @@ function Import-ShadowCatConfig {
 # Resolve configuration dependencies
 function Resolve-ConfigDependencies {
     param([string[]]$ConfigFiles)
-    
+
     Write-ShadowCatLog "Resolving configuration dependencies..." -Level "Header"
-    
+
     $resolvedConfigs = @()
     $processingQueue = [System.Collections.Queue]::new()
-    
+
     # Add initial configs to queue
     foreach ($configFile in $ConfigFiles) {
         $processingQueue.Enqueue($configFile)
     }
-    
+
     while ($processingQueue.Count -gt 0) {
         $currentConfig = $processingQueue.Dequeue()
-        
+
         # Skip if already resolved
         if ($currentConfig -in $resolvedConfigs) {
             continue
         }
-        
+
         Write-ShadowCatLog "Processing dependencies for: $currentConfig" -Level "Dependency"
-        
+
         $config = Import-ShadowCatConfig -ConfigPath $currentConfig
         if ($null -eq $config) {
             Write-ShadowCatLog "Skipping invalid configuration: $currentConfig" -Level "Warning"
             continue
         }
-        
+
         # Check install level compatibility
         if ($config.metadata.installLevel) {
             $configLevel = $config.metadata.installLevel
@@ -177,13 +192,13 @@ function Resolve-ConfigDependencies {
                 "all" { $true }
                 default { $true }
             }
-            
+
             if (-not $isCompatible) {
                 Write-ShadowCatLog "Skipping $currentConfig - install level $configLevel not compatible with $InstallLevel" -Level "Warning"
                 continue
             }
         }
-        
+
         # Process dependencies first
         if ($config.metadata.dependencies) {
             foreach ($dependency in $config.metadata.dependencies) {
@@ -193,27 +208,27 @@ function Resolve-ConfigDependencies {
                 }
             }
         }
-        
+
         # Add current config to resolved list
         $resolvedConfigs += $currentConfig
         $Global:DependencyChain += $currentConfig
     }
-    
+
     Write-ShadowCatLog "Dependency resolution complete. Processing order:" -Level "Success"
     foreach ($config in $resolvedConfigs) {
         Write-ShadowCatLog "  → $config" -Level "Info"
     }
-    
+
     return $resolvedConfigs
 }
 
 # Check if tool should be installed based on level and duplicates
 function Test-ToolInstallation {
     param($tool, $source)
-    
+
     # Check if tool has a unique ID
     $toolId = if ($tool.toolId) { $tool.toolId } else { $tool.name }
-    
+
     # Check install level compatibility
     if ($tool.installLevel) {
         $toolLevel = $tool.installLevel
@@ -224,13 +239,13 @@ function Test-ToolInstallation {
             "all" { $true }
             default { $true }
         }
-        
+
         if (-not $isCompatible) {
             Write-ShadowCatLog "Skipping $($tool.name) - level $toolLevel not compatible with $InstallLevel" -Level "Debug"
             return $false
         }
     }
-    
+
     # Check for duplicates
     if ($Global:InstalledTools.ContainsKey($toolId)) {
         $existingSource = $Global:InstalledTools[$toolId]
@@ -242,17 +257,17 @@ function Test-ToolInstallation {
         }
         return $false
     }
-    
+
     return $true
 }
 
 function Install-ChocolateyPackages {
     param($packages, $configName)
-    
+
     if (-not $packages -or $packages.Count -eq 0) { return }
-    
+
     Write-ShadowCatLog "Processing Chocolatey packages from $configName..." -Level "Header"
-    
+
     if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
         Write-ShadowCatLog "Installing Chocolatey package manager..." -Level "Info"
         if (-not $DryRun) {
@@ -261,21 +276,21 @@ function Install-ChocolateyPackages {
             Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
         }
     }
-    
+
     $installedCount = 0
     $skippedCount = 0
-    
+
     foreach ($package in $packages) {
         $toolId = if ($package.toolId) { $package.toolId } else { $package.name }
-        
+
         if (-not (Test-ToolInstallation -tool $package -source "Chocolatey")) {
             $skippedCount++
             continue
         }
-        
+
         try {
             Write-ShadowCatLog "Installing $($package.name) - $($package.description)" -Level "Info"
-            
+
             if (-not $DryRun) {
                 $installCmd = "choco install $($package.name) -y"
                 if ($package.arguments) {
@@ -285,7 +300,7 @@ function Install-ChocolateyPackages {
             } else {
                 Write-ShadowCatLog "[DRY RUN] Would install: $installCmd" -Level "Debug"
             }
-            
+
             $Global:InstalledTools[$toolId] = "Chocolatey"
             $installedCount++
             Write-ShadowCatLog "Successfully processed $($package.name)" -Level "Success"
@@ -294,18 +309,18 @@ function Install-ChocolateyPackages {
             Write-ShadowCatLog "Failed to install $($package.name): $($_.Exception.Message)" -Level "Error"
         }
     }
-    
+
     Write-ShadowCatLog "Chocolatey summary: $installedCount installed, $skippedCount skipped" -Level "Info"
 }
 
 # Scoop installation
 function Install-ScoopPackages {
     param($scoopConfig, $configName)
-    
+
     if (-not $scoopConfig -or $scoopConfig.packages.Count -eq 0) { return }
-    
+
     Write-ShadowCatLog "Processing Scoop packages from $configName..." -Level "Header"
-    
+
     # Ensure Scoop is installed
     if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
         Write-ShadowCatLog "Installing Scoop package manager..." -Level "Info"
@@ -314,7 +329,7 @@ function Install-ScoopPackages {
             Invoke-RestMethod get.scoop.sh | Invoke-Expression
         }
     }
-    
+
     # Add required buckets
     if ($scoopConfig.buckets -and -not $DryRun) {
         foreach ($bucket in $scoopConfig.buckets) {
@@ -327,27 +342,27 @@ function Install-ScoopPackages {
             }
         }
     }
-    
+
     $installedCount = 0
     $skippedCount = 0
-    
+
     foreach ($package in $scoopConfig.packages) {
         $toolId = if ($package.toolId) { $package.toolId } else { $package.name }
-        
+
         if (-not (Test-ToolInstallation -tool $package -source "Scoop")) {
             $skippedCount++
             continue
         }
-        
+
         try {
             Write-ShadowCatLog "Installing $($package.name) - $($package.description)" -Level "Info"
-            
+
             if (-not $DryRun) {
                 scoop install $package.name
             } else {
                 Write-ShadowCatLog "[DRY RUN] Would install: scoop install $($package.name)" -Level "Debug"
             }
-            
+
             $Global:InstalledTools[$toolId] = "Scoop"
             $installedCount++
             Write-ShadowCatLog "Successfully processed $($package.name)" -Level "Success"
@@ -356,33 +371,33 @@ function Install-ScoopPackages {
             Write-ShadowCatLog "Failed to install $($package.name): $($_.Exception.Message)" -Level "Error"
         }
     }
-    
+
     Write-ShadowCatLog "Scoop summary: $installedCount installed, $skippedCount skipped" -Level "Info"
 }
 
 # GitHub projects installation
 function Install-GitHubProjects {
     param($projects, $basePath, $configName)
-    
+
     if (-not $projects -or $projects.Count -eq 0) { return }
-    
+
     Write-ShadowCatLog "Processing GitHub projects from $configName..." -Level "Header"
-    
+
     $installedCount = 0
     $skippedCount = 0
-    
+
     foreach ($project in $projects) {
         $toolId = if ($project.toolId) { $project.toolId } else { $project.name }
-        
+
         if (-not (Test-ToolInstallation -tool $project -source "GitHub")) {
             $skippedCount++
             continue
         }
-        
+
         try {
             $destination = Join-Path $basePath $project.destination
             Write-ShadowCatLog "Cloning $($project.name) - $($project.description)" -Level "Info"
-            
+
             if (-not $DryRun) {
                 if (Test-Path $destination) {
                     Write-ShadowCatLog "Directory exists, pulling latest changes for $($project.name)" -Level "Debug"
@@ -397,7 +412,7 @@ function Install-GitHubProjects {
             } else {
                 Write-ShadowCatLog "[DRY RUN] Would clone: $($project.url) to $destination" -Level "Debug"
             }
-            
+
             $Global:InstalledTools[$toolId] = "GitHub"
             $installedCount++
             Write-ShadowCatLog "Successfully processed $($project.name)" -Level "Success"
@@ -406,38 +421,38 @@ function Install-GitHubProjects {
             Write-ShadowCatLog "Failed to clone $($project.name): $($_.Exception.Message)" -Level "Error"
         }
     }
-    
+
     Write-ShadowCatLog "GitHub summary: $installedCount installed, $skippedCount skipped" -Level "Info"
 }
 
 # Python packages installation
 function Install-PythonPackages {
     param($packages, $configName)
-    
+
     if (-not $packages -or $packages.Count -eq 0) { return }
-    
+
     Write-ShadowCatLog "Processing Python packages from $configName..." -Level "Header"
-    
+
     $installedCount = 0
     $skippedCount = 0
-    
+
     foreach ($package in $packages) {
         $toolId = if ($package.toolId) { $package.toolId } else { "python-$($package.name)" }
-        
+
         if (-not (Test-ToolInstallation -tool $package -source "Python pip")) {
             $skippedCount++
             continue
         }
-        
+
         try {
             Write-ShadowCatLog "Installing Python package: $($package.name) - $($package.description)" -Level "Info"
-            
+
             if (-not $DryRun) {
                 python -m pip install $package.name
             } else {
                 Write-ShadowCatLog "[DRY RUN] Would install: python -m pip install $($package.name)" -Level "Debug"
             }
-            
+
             $Global:InstalledTools[$toolId] = "Python pip"
             $installedCount++
             Write-ShadowCatLog "Successfully processed $($package.name)" -Level "Success"
@@ -446,7 +461,7 @@ function Install-PythonPackages {
             Write-ShadowCatLog "Failed to install $($package.name): $($_.Exception.Message)" -Level "Error"
         }
     }
-    
+
     Write-ShadowCatLog "Python summary: $installedCount installed, $skippedCount skipped" -Level "Info"
 }
 
@@ -455,12 +470,12 @@ function Show-InstallationSummary {
     Write-Host "`n╔═══════════════════════════════════════════════════════════════════════╗" -ForegroundColor Green
     Write-Host "║                     Installation Summary                             ║" -ForegroundColor Green
     Write-Host "╚═══════════════════════════════════════════════════════════════════════╝" -ForegroundColor Green
-    
+
     Write-Host "`n📊 STATISTICS:" -ForegroundColor Cyan
     Write-Host "   Total Tools Installed: $($Global:InstalledTools.Count)" -ForegroundColor Green
     Write-Host "   Tools Skipped (Duplicates): $($Global:SkippedTools.Count)" -ForegroundColor Yellow
     Write-Host "   Install Level: $InstallLevel" -ForegroundColor White
-    
+
     if ($Global:InstalledTools.Count -gt 0) {
         Write-Host "`n🛠️  INSTALLED TOOLS BY SOURCE:" -ForegroundColor Cyan
         $groupedTools = $Global:InstalledTools.GetEnumerator() | Group-Object Value
@@ -468,17 +483,17 @@ function Show-InstallationSummary {
             Write-Host "   $($group.Name): $($group.Count) tools" -ForegroundColor White
         }
     }
-    
+
     if ($Global:SkippedTools.Count -gt 0) {
         Write-Host "`n⚠️  SKIPPED TOOLS:" -ForegroundColor Yellow
         foreach ($skipped in $Global:SkippedTools.GetEnumerator()) {
             Write-Host "   $($skipped.Value.name) - $($skipped.Value.reason)" -ForegroundColor Gray
         }
     }
-    
+
     Write-Host "`n🎯 NEXT STEPS:" -ForegroundColor Cyan
     Write-Host "   1. Restart PowerShell to activate ShadowCat profile" -ForegroundColor White
-    Write-Host "   2. Use 'bcat' command to navigate to tools" -ForegroundColor White  
+    Write-Host "   2. Use 'bcat' command to navigate to tools" -ForegroundColor White
     Write-Host "   3. Check tool-specific documentation for usage" -ForegroundColor White
     Write-Host "`n   Happy Hacking with ShadowCat! 🐱‍💻`n" -ForegroundColor Yellow
 }
@@ -486,59 +501,59 @@ function Show-InstallationSummary {
 # Main installation function
 function Start-Installation {
     param([string[]]$ConfigFiles, [string]$InstallPath)
-    
+
     Show-ShadowCatBanner
-    
+
     if ($ShowDependencies) {
         Write-ShadowCatLog "Dependency analysis mode - showing configuration dependencies" -Level "Info"
         $resolvedConfigs = Resolve-ConfigDependencies -ConfigFiles $ConfigFiles
         return
     }
-    
+
     if ($ConfigFiles.Count -eq 0) {
         Write-ShadowCatLog "No configuration files specified. Use -ShowAvailableConfigs to see options." -Level "Warning"
         return
     }
-    
+
     Write-ShadowCatLog "Starting ShadowCat Installation..." -Level "Header"
     Write-ShadowCatLog "Install Level: $InstallLevel" -Level "Info"
     Write-ShadowCatLog "Install Path: $InstallPath" -Level "Info"
     Write-ShadowCatLog "Dry Run Mode: $DryRun" -Level "Info"
-    
+
     # Resolve dependencies
     $resolvedConfigs = Resolve-ConfigDependencies -ConfigFiles $ConfigFiles
-    
+
     if ($resolvedConfigs.Count -eq 0) {
         Write-ShadowCatLog "No valid configurations to process" -Level "Error"
         return
     }
-    
+
     # Process each configuration in dependency order
     foreach ($configFile in $resolvedConfigs) {
         $config = $Global:ProcessedConfigs[(Join-Path (Join-Path $PSScriptRoot "configs") $configFile)]
-        
+
         if ($null -eq $config) { continue }
-        
+
         Write-ShadowCatLog "Processing configuration: $($config.metadata.name)" -Level "Header"
-        
+
         # Install packages based on configuration
         if ($config.chocolatey) {
             Install-ChocolateyPackages -packages $config.chocolatey.packages -configName $config.metadata.name
         }
-        
+
         if ($config.scoop) {
             Install-ScoopPackages -scoopConfig $config.scoop -configName $config.metadata.name
         }
-        
+
         if ($config.github) {
             Install-GitHubProjects -projects $config.github.projects -basePath $InstallPath -configName $config.metadata.name
         }
-        
+
         if ($config.python) {
             Install-PythonPackages -packages $config.python.packages -configName $config.metadata.name
         }
     }
-    
+
     # Show final summary
     Show-InstallationSummary
 }

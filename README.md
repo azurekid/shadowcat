@@ -59,8 +59,8 @@ ShadowCat organizes security tools into specialized categories for different use
 ### One-Click Installation
 
 ```powershell
-# Download and run the enhanced installer
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/azurekid/shadowcat/main/BlackCat-Enhanced-Installer.ps1'))
+# Download and run the installer
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/azurekid/shadowcat/main/ShadowCat-Installer.ps1'))
 ```
 
 ### Custom Installation
@@ -71,13 +71,16 @@ git clone https://github.com/azurekid/shadowcat.git
 cd shadowcat
 
 # Install specific categories
-.\BlackCat-Enhanced-Installer.ps1 -ConfigFiles "configs\blackcat-redteam-tools.json"
+.\ShadowCat-Installer.ps1 -ConfigFiles "configs\blackcat-redteam-tools.json"
 
 # Install with specific profile level
-.\BlackCat-Enhanced-Installer.ps1 -ConfigFiles "configs\blackcat-professional-profile.json" -InstallLevel professional
+.\ShadowCat-Installer.ps1 -ConfigFiles "configs\blackcat-professional-profile.json" -InstallLevel professional
 
 # Dry run to preview installation
-.\BlackCat-Enhanced-Installer.ps1 -ConfigFiles "configs\blackcat-web-tools.json" -DryRun
+.\ShadowCat-Installer.ps1 -ConfigFiles "configs\blackcat-web-tools.json" -DryRun
+
+# Online installation (fetch config from GitHub main branch)
+.\ShadowCat-Installer.ps1 -ConfigFiles "blackcat-core-base.json" -Online
 ```
 
 ---
@@ -215,32 +218,36 @@ Create your own configurations by following the JSON schema:
 
 ### Configuration Examples
 
+
 #### **Quick Category Installation**
 ```powershell
 # Install only OSINT tools
-.\BlackCat-Enhanced-Installer.ps1 -ConfigFiles "configs\blackcat-osint-tools.json"
+.\ShadowCat-Installer.ps1 -ConfigFiles "configs\blackcat-osint-tools.json"
 
 # Install web security tools at professional level  
-.\BlackCat-Enhanced-Installer.ps1 -ConfigFiles "configs\blackcat-web-tools.json" -InstallLevel professional
+.\ShadowCat-Installer.ps1 -ConfigFiles "configs\blackcat-web-tools.json" -InstallLevel professional
+
+# Online installation (fetch config from GitHub)
+.\ShadowCat-Installer.ps1 -ConfigFiles "blackcat-osint-tools.json" -Online
 ```
 
 #### **Multi-Configuration Installation**
 ```powershell
 # Install multiple categories simultaneously
-.\BlackCat-Enhanced-Installer.ps1 -ConfigFiles @(
-    "configs\blackcat-redteam-tools.json",
-    "configs\blackcat-forensics-tools.json", 
-    "configs\blackcat-osint-tools.json"
+.\ShadowCat-Installer.ps1 -ConfigFiles @(
+  "configs\blackcat-redteam-tools.json",
+  "configs\blackcat-forensics-tools.json", 
+  "configs\blackcat-osint-tools.json"
 )
 ```
 
 #### **Profile-Based Installation**
 ```powershell
 # Install complete professional profile (includes all dependencies)
-.\BlackCat-Enhanced-Installer.ps1 -ConfigFiles "configs\blackcat-professional-profile.json"
+.\ShadowCat-Installer.ps1 -ConfigFiles "configs\blackcat-professional-profile.json"
 
 # Lite installation for resource-constrained systems
-.\BlackCat-Enhanced-Installer.ps1 -ConfigFiles "configs\blackcat-lite-profile.json"
+.\ShadowCat-Installer.ps1 -ConfigFiles "configs\blackcat-lite-profile.json"
 ```
 
 ### 🔍 Available Configurations
@@ -262,19 +269,19 @@ Create your own configurations by following the JSON schema:
 #### **Configuration Validation**
 ```powershell
 # Validate configuration syntax before installation
-.\BlackCat-ConfigManager.ps1 -ValidateConfig "configs\your-config.json"
+. ./ShadowCat-ConfigManager.ps1 -Action validate -ConfigFile configs\your-config.json
 
 # Preview what would be installed (dry run)
-.\BlackCat-Enhanced-Installer.ps1 -ConfigFiles "configs\blackcat-web-tools.json" -DryRun
+.\ShadowCat-Installer.ps1 -ConfigFiles "configs\blackcat-web-tools.json" -DryRun
 ```
 
-#### **Dependency Analysis**
-```powershell  
-# Analyze configuration dependencies
-.\BlackCat-ConfigManager.ps1 -AnalyzeDependencies "configs\blackcat-professional-profile.json"
+#### **Dependency Analysis & Tool Listing**
+```powershell
+# List all tools in a config
+. ./ShadowCat-ConfigManager.ps1 -Action list -ConfigFile configs\blackcat-redteam-tools.json
 
-# List all tools that would be installed
-.\BlackCat-ConfigManager.ps1 -ListTools "configs\blackcat-redteam-tools.json"
+# Merge configs
+. ./ShadowCat-ConfigManager.ps1 -Action merge-configs -MergeConfigs configs\one.json,configs\two.json -OutputConfig configs\merged.json
 ```
 
 This modular approach ensures ShadowCat remains **maintainable**, **flexible**, and **community-friendly** while providing enterprise-grade tool management capabilities.
@@ -332,18 +339,20 @@ ShadowCat thrives on community collaboration! We welcome contributions from secu
 
 ```
 shadowcat/
-├── 📄 BlackCat-Enhanced-Installer.ps1      # Main installation script
-├── 📄 BlackCat-ConfigManager.ps1           # Configuration management
+├── 📄 ShadowCat-Installer.ps1              # Main installation script
+├── 📄 ShadowCat-ConfigManager.ps1          # Configuration management
 ├── 📄 BlackCat-Modular-Guide.md            # Detailed installation guide
 ├── 📁 configs/                             # Tool configuration files
-│   ├── shadowcat-redteam-tools.json        # Red team frameworks
-│   ├── shadowcat-osint-tools.json          # OSINT and reconnaissance
-│   ├── shadowcat-web-tools.json            # Web application testing
-│   ├── shadowcat-mobile-tools.json         # Mobile security testing
-│   ├── shadowcat-forensics-tools.json      # Digital forensics
-│   ├── shadowcat-essential-tools.json      # Core utilities
-│   ├── shadowcat-lite-profile.json         # Lightweight installation
-│   └── shadowcat-professional-profile.json # Complete toolset
+│   ├── blackcat-redteam-tools.json         # Red team frameworks
+│   ├── blackcat-osint-tools.json           # OSINT and reconnaissance
+│   ├── blackcat-web-tools.json             # Web application testing
+│   ├── blackcat-mobile-tools.json          # Mobile security testing
+│   ├── blackcat-forensics-tools.json       # Digital forensics
+│   ├── blackcat-essential-tools.json       # Core utilities
+│   ├── blackcat-lite-profile.json          # Lightweight installation
+│   └── blackcat-professional-profile.json  # Complete toolset
+├── 📁 docs/                                # Documentation folder
+│   └── ShadowCat-ConfigManager.md          # Config manager documentation
 └── 📄 README.md                            # This file
 ```
 
