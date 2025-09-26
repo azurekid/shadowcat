@@ -628,7 +628,7 @@ function Start-Installation {
     Create-ToolCategoryFolders -BasePath (Join-Path $InstallPath "Tools")
 
     # Set custom desktop background (change URL as desired)
-    $wallpaperUrl = "https://raw.githubusercontent.com/azurekid/shadowcat/main/docs/shadowcat_wallpaper.jpg"
+    $wallpaperUrl = "https://raw.githubusercontent.com/azurekid/shadowcat/main/media/shadowcat_wallpaper.png"
     Set-DesktopBackground -ImageUrl $wallpaperUrl
 
     # Show final summary
