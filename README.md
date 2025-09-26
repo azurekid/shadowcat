@@ -71,16 +71,16 @@ git clone https://github.com/azurekid/shadowcat.git
 cd shadowcat
 
 # Install specific categories
-.\ShadowCat-Installer.ps1 -ConfigFiles "configs\blackcat-redteam-tools.json"
+.\ShadowCat-Installer.ps1 -ConfigFiles "configs\shadowcat-redteam-tools.json"
 
 # Install with specific profile level
-.\ShadowCat-Installer.ps1 -ConfigFiles "configs\blackcat-professional-profile.json" -InstallLevel professional
+.\ShadowCat-Installer.ps1 -ConfigFiles "configs\shadowcat-professional-profile.json" -InstallLevel professional
 
 # Dry run to preview installation
-.\ShadowCat-Installer.ps1 -ConfigFiles "configs\blackcat-web-tools.json" -DryRun
+.\ShadowCat-Installer.ps1 -ConfigFiles "configs\shadowcat-web-tools.json" -DryRun
 
 # Online installation (fetch config from GitHub main branch)
-.\ShadowCat-Installer.ps1 -ConfigFiles "blackcat-core-base.json" -Online
+.\ShadowCat-Installer.ps1 -ConfigFiles "shadowcat-core-base.json" -Online
 ```
 
 ---
@@ -122,9 +122,9 @@ ShadowCat's power lies in its **modular JSON-based configuration system** that a
 ### Configuration Architecture
 
 #### **Configuration Types**
-- **Category Configs**: Specialized tool collections (`blackcat-redteam-tools.json`, `blackcat-web-tools.json`)
-- **Profile Configs**: Complete installation profiles (`blackcat-professional-profile.json`, `blackcat-lite-profile.json`)
-- **Base Configs**: Core dependencies shared across configurations (`blackcat-core-base.json`)
+- **Category Configs**: Specialized tool collections (`shadowcat-redteam-tools.json`, `shadowcat-web-tools.json`)
+- **Profile Configs**: Complete installation profiles (`shadowcat-professional-profile.json`, `shadowcat-lite-profile.json`)
+- **Base Configs**: Core dependencies shared across configurations (`shadowcat-core-base.json`)
 
 #### **JSON Structure**
 ```json
@@ -199,7 +199,7 @@ Create your own configurations by following the JSON schema:
     "author": "Your Name",
     "category": "Custom",
     "installLevel": "standard",
-    "dependencies": ["blackcat-core-base.json"]
+    "dependencies": ["shadowcat-core-base.json"]
   },
   "chocolatey": {
     "packages": [
@@ -222,47 +222,47 @@ Create your own configurations by following the JSON schema:
 #### **Quick Category Installation**
 ```powershell
 # Install only OSINT tools
-.\ShadowCat-Installer.ps1 -ConfigFiles "configs\blackcat-osint-tools.json"
+.\ShadowCat-Installer.ps1 -ConfigFiles "configs\shadowcat-osint-tools.json"
 
 # Install web security tools at professional level  
-.\ShadowCat-Installer.ps1 -ConfigFiles "configs\blackcat-web-tools.json" -InstallLevel professional
+.\ShadowCat-Installer.ps1 -ConfigFiles "configs\shadowcat-web-tools.json" -InstallLevel professional
 
 # Online installation (fetch config from GitHub)
-.\ShadowCat-Installer.ps1 -ConfigFiles "blackcat-osint-tools.json" -Online
+.\ShadowCat-Installer.ps1 -ConfigFiles "shadowcat-osint-tools.json" -Online
 ```
 
 #### **Multi-Configuration Installation**
 ```powershell
 # Install multiple categories simultaneously
 .\ShadowCat-Installer.ps1 -ConfigFiles @(
-  "configs\blackcat-redteam-tools.json",
-  "configs\blackcat-forensics-tools.json", 
-  "configs\blackcat-osint-tools.json"
+  "configs\shadowcat-redteam-tools.json",
+  "configs\shadowcat-forensics-tools.json",
+  "configs\shadowcat-osint-tools.json"
 )
 ```
 
 #### **Profile-Based Installation**
 ```powershell
 # Install complete professional profile (includes all dependencies)
-.\ShadowCat-Installer.ps1 -ConfigFiles "configs\blackcat-professional-profile.json"
+.\ShadowCat-Installer.ps1 -ConfigFiles "configs\shadowcat-professional-profile.json"
 
 # Lite installation for resource-constrained systems
-.\ShadowCat-Installer.ps1 -ConfigFiles "configs\blackcat-lite-profile.json"
+.\ShadowCat-Installer.ps1 -ConfigFiles "configs\shadowcat-lite-profile.json"
 ```
 
 ### 🔍 Available Configurations
 
 | Configuration File | Category | Tools | Dependencies | Best For |
 |-------------------|----------|--------|--------------|----------|
-| `blackcat-core-base.json` | Base | Core utilities (Git, Python, Go) | None | Required by all configs |
-| `blackcat-essential-tools.json` | Essential | Network, debug, utilities | Core base | All installations |
-| `blackcat-redteam-tools.json` | Red Team | C2, post-exploitation | Core base | Offensive operations |
-| `blackcat-osint-tools.json` | OSINT | Reconnaissance, HUMINT | Core base | Information gathering |
-| `blackcat-web-tools.json` | Web Security | Web app testing, API fuzzing | Core base | Web penetration testing |
-| `blackcat-mobile-tools.json` | Mobile | Android/iOS testing | Core base | Mobile security testing |
-| `blackcat-forensics-tools.json` | Forensics | Digital investigation | Core base | Incident response |
-| `blackcat-lite-profile.json` | Profile | Essential tools only | Multiple configs | Beginners, low resources |
-| `blackcat-professional-profile.json` | Profile | Complete toolset | All category configs | Advanced users |
+| `shadowcat-core-base.json` | Base | Core utilities (Git, Python, Go) | None | Required by all configs |
+| `shadowcat-essential-tools.json` | Essential | Network, debug, utilities | Core base | All installations |
+| `shadowcat-redteam-tools.json` | Red Team | C2, post-exploitation | Core base | Offensive operations |
+| `shadowcat-osint-tools.json` | OSINT | Reconnaissance, HUMINT | Core base | Information gathering |
+| `shadowcat-web-tools.json` | Web Security | Web app testing, API fuzzing | Core base | Web penetration testing |
+| `shadowcat-mobile-tools.json` | Mobile | Android/iOS testing | Core base | Mobile security testing |
+| `shadowcat-forensics-tools.json` | Forensics | Digital investigation | Core base | Incident response |
+| `shadowcat-lite-profile.json` | Profile | Essential tools only | Multiple configs | Beginners, low resources |
+| `shadowcat-professional-profile.json` | Profile | Complete toolset | All category configs | Advanced users |
 
 ### Advanced Configuration Management
 
@@ -272,13 +272,13 @@ Create your own configurations by following the JSON schema:
 . ./ShadowCat-ConfigManager.ps1 -Action validate -ConfigFile configs\your-config.json
 
 # Preview what would be installed (dry run)
-.\ShadowCat-Installer.ps1 -ConfigFiles "configs\blackcat-web-tools.json" -DryRun
+.\ShadowCat-Installer.ps1 -ConfigFiles "configs\shadowcat-web-tools.json" -DryRun
 ```
 
 #### **Dependency Analysis & Tool Listing**
 ```powershell
 # List all tools in a config
-. ./ShadowCat-ConfigManager.ps1 -Action list -ConfigFile configs\blackcat-redteam-tools.json
+. ./ShadowCat-ConfigManager.ps1 -Action list -ConfigFile configs\shadowcat-redteam-tools.json
 
 # Merge configs
 . ./ShadowCat-ConfigManager.ps1 -Action merge-configs -MergeConfigs configs\one.json,configs\two.json -OutputConfig configs\merged.json
@@ -341,16 +341,16 @@ ShadowCat thrives on community collaboration! We welcome contributions from secu
 shadowcat/
 ├── 📄 ShadowCat-Installer.ps1              # Main installation script
 ├── 📄 ShadowCat-ConfigManager.ps1          # Configuration management
-├── 📄 BlackCat-Modular-Guide.md            # Detailed installation guide
+├── 📄 shadowcat-Modular-Guide.md            # Detailed installation guide
 ├── 📁 configs/                             # Tool configuration files
-│   ├── blackcat-redteam-tools.json         # Red team frameworks
-│   ├── blackcat-osint-tools.json           # OSINT and reconnaissance
-│   ├── blackcat-web-tools.json             # Web application testing
-│   ├── blackcat-mobile-tools.json          # Mobile security testing
-│   ├── blackcat-forensics-tools.json       # Digital forensics
-│   ├── blackcat-essential-tools.json       # Core utilities
-│   ├── blackcat-lite-profile.json          # Lightweight installation
-│   └── blackcat-professional-profile.json  # Complete toolset
+│   ├── shadowcat-redteam-tools.json         # Red team frameworks
+│   ├── shadowcat-osint-tools.json           # OSINT and reconnaissance
+│   ├── shadowcat-web-tools.json             # Web application testing
+│   ├── shadowcat-mobile-tools.json          # Mobile security testing
+│   ├── shadowcat-forensics-tools.json       # Digital forensics
+│   ├── shadowcat-essential-tools.json       # Core utilities
+│   ├── shadowcat-lite-profile.json          # Lightweight installation
+│   └── shadowcat-professional-profile.json  # Complete toolset
 ├── 📁 docs/                                # Documentation folder
 │   └── ShadowCat-ConfigManager.md          # Config manager documentation
 └── 📄 README.md                            # This file
@@ -383,7 +383,7 @@ shadowcat/
 
 ### Documentation
 
-- **[Modular Installation Guide](BlackCat-Modular-Guide.md)**: Comprehensive setup instructions
+- **[Modular Installation Guide](shadowcat-Modular-Guide.md)**: Comprehensive setup instructions
 - **[Configuration Reference](configs/)**: Details on all available tool configurations
 - **[Security Guidelines](SECURITY.md)**: Security best practices and reporting
 

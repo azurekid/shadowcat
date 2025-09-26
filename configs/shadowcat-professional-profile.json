@@ -8,11 +8,11 @@
     "category": "Profile",
     "installLevel": "professional",
     "dependencies": [
-      "blackcat-core-base.json",
-      "blackcat-essential-tools.json",
-      "blackcat-web-tools.json",
-      "blackcat-redteam-tools.json",
-      "blackcat-osint-tools.json"
+      "shadowcat-core-base.json",
+      "shadowcat-essential-tools.json",
+      "shadowcat-web-tools.json",
+      "shadowcat-redteam-tools.json",
+      "shadowcat-osint-tools.json"
     ]
   },
   "chocolatey": {

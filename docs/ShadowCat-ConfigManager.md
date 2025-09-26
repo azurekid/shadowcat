@@ -19,13 +19,13 @@
 
 ### Validate a Configuration File
 ```powershell
-. ./ShadowCat-ConfigManager.ps1 -Action validate -ConfigFile configs\blackcat-web-tools.json
+. ./ShadowCat-ConfigManager.ps1 -Action validate -ConfigFile configs\shadowcat-web-tools.json
 ```
 Checks the syntax and required fields of the specified config file.
 
 ### List All Tools in a Config
 ```powershell
-. ./ShadowCat-ConfigManager.ps1 -Action list -ConfigFile configs\blackcat-redteam-tools.json
+. ./ShadowCat-ConfigManager.ps1 -Action list -ConfigFile configs\shadowcat-redteam-tools.json
 ```
 Displays a complete list of tools that will be installed, including those from dependencies.
 
