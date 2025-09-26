@@ -35,6 +35,10 @@ $script:SkippedTools = @{}
 $script:DependencyChain = @()
 $script:IsIEXMode = ($null -eq $PSScriptRoot -or $PSScriptRoot -eq '')
 
+# Set a global variable to inform module files that we're in IEX mode
+# This will be used to conditionally skip Export-ModuleMember commands
+$Global:ShadowCatIEXMode = $script:IsIEXMode
+
 # Identify execution context - local script or IEX
 if ($script:IsIEXMode) {
     # Running via IEX - need to handle modules differently
@@ -71,6 +75,26 @@ foreach ($moduleFile in $moduleFiles) {
         try {
             Write-Host "  [*] Downloading module: $moduleFile" -ForegroundColor Yellow
             $moduleContent = Invoke-WebRequest -Uri $moduleUrl -UseBasicParsing | Select-Object -ExpandProperty Content
+            
+            # Add a conditional wrapper around Export-ModuleMember for IEX mode
+            $moduleContent = @"
+# IEX compatibility wrapper
+`$ExportModuleMember = `$function:Export-ModuleMember
+`$function:Export-ModuleMember = { 
+    param([string[]]`$Function) 
+    # Skip actual Export-ModuleMember in IEX mode to prevent errors
+    if (-not `$Global:ShadowCatIEXMode) {
+        & `$ExportModuleMember -Function `$Function
+    }
+}
+
+$moduleContent
+
+# Restore original Export-ModuleMember function if we changed it
+if (`$ExportModuleMember) {
+    `$function:Export-ModuleMember = `$ExportModuleMember
+}
+"@
             Set-Content -Path $modulePath -Value $moduleContent -Force
             Write-Host "  [✓] Downloaded module: $moduleFile" -ForegroundColor Green
         }

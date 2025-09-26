@@ -173,5 +173,7 @@ function Test-ToolInstallation {
     return $true
 }
 
-# Export functions
-Export-ModuleMember -Function Import-ShadowCatConfig, Resolve-ConfigDependencies, Test-ToolInstallation
+# Export functions - but only if not in IEX mode
+if (-not (Get-Variable -Name ShadowCatIEXMode -Scope Global -ErrorAction SilentlyContinue)) {
+    Export-ModuleMember -Function Import-ShadowCatConfig, Resolve-ConfigDependencies, Test-ToolInstallation
+}

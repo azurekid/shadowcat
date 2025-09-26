@@ -32,5 +32,7 @@ function Set-DesktopBackground {
     }
 }
 
-# Export functions
-Export-ModuleMember -Function New-ToolCategoryFolders, Set-DesktopBackground
+# Export functions - but only if not in IEX mode
+if (-not (Get-Variable -Name ShadowCatIEXMode -Scope Global -ErrorAction SilentlyContinue)) {
+    Export-ModuleMember -Function New-ToolCategoryFolders, Set-DesktopBackground
+}

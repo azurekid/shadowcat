@@ -283,5 +283,7 @@ function Install-PythonPackages {
     Write-ShadowCatLog "Python summary: $installedCount installed, $skippedCount skipped" -Level "Info"
 }
 
-# Export functions
-Export-ModuleMember -Function Install-ChocolateyPackages, Install-ScoopPackages, Install-GitHubProjects, Install-PythonPackages
+# Export functions - but only if not in IEX mode
+if (-not (Get-Variable -Name ShadowCatIEXMode -Scope Global -ErrorAction SilentlyContinue)) {
+    Export-ModuleMember -Function Install-ChocolateyPackages, Install-ScoopPackages, Install-GitHubProjects, Install-PythonPackages
+}

@@ -93,5 +93,7 @@ function Show-InstallationSummary {
     Write-Host "`n   Happy Hacking with ShadowCat! 🐱‍💻`n" -ForegroundColor Yellow
 }
 
-# Export functions
-Export-ModuleMember -Function Show-ShadowCatBanner, Write-ShadowCatLog, Show-InstallationSummary
+# Export functions - but only if not in IEX mode
+if (-not (Get-Variable -Name ShadowCatIEXMode -Scope Global -ErrorAction SilentlyContinue)) {
+    Export-ModuleMember -Function Show-ShadowCatBanner, Write-ShadowCatLog, Show-InstallationSummary
+}
