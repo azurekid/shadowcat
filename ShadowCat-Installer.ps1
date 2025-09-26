@@ -295,11 +295,52 @@ function Install-ChocolateyPackages {
                 if ($isInstalled) {
                     Write-ShadowCatLog "$($package.name) is already installed, skipping." -Level "Info"
                 } else {
-                    $installCmd = "choco install $($package.name) -y"
-                    if ($package.arguments) {
-                        $installCmd += " $($package.arguments)"
+                    # First check if package exists in repository
+                    $searchResult = choco search $($package.name) --exact -r
+                    if (-not $searchResult) {
+                        # Package not found in default repository
+                        Write-ShadowCatLog "Package $($package.name) not found in default Chocolatey repository." -Level "Warning"
+                        
+                        # Handle specific package alternatives
+                        switch ($package.name) {
+                            "john" {
+                                Write-ShadowCatLog "Trying alternative: john-jumbo instead of john" -Level "Info"
+                                $installCmd = "choco install john-jumbo -y"
+                            }
+                            "netcat" {
+                                Write-ShadowCatLog "Trying alternative: netcat-win32 instead of netcat" -Level "Info"
+                                $installCmd = "choco install netcat-win32 -y"
+                            }
+                            default {
+                                Write-ShadowCatLog "Skipping installation of $($package.name) - package not found." -Level "Warning"
+                                $Global:SkippedTools[$toolId] = @{
+                                    name = $package.name
+                                    source = $source
+                                    reason = "Package not found in repository"
+                                }
+                                continue
+                            }
+                        }
+                    } else {
+                        $installCmd = "choco install $($package.name) -y"
+                        if ($package.arguments) {
+                            $installCmd += " $($package.arguments)"
+                        }
                     }
-                    Invoke-Expression $installCmd
+                    
+                    # Execute the install command
+                    try {
+                        $output = Invoke-Expression $installCmd
+                        
+                        # Check if installation was successful
+                        if ($output -match "0/\d+ packages failed" -or $output -match "installed 1/1") {
+                            Write-ShadowCatLog "$($package.name) installed successfully." -Level "Success"
+                        } else {
+                            Write-ShadowCatLog "Installation of $($package.name) may have failed. Check logs for details." -Level "Warning"
+                        }
+                    } catch {
+                        Write-ShadowCatLog "Error during installation of $($package.name): $($_.Exception.Message)" -Level "Error"
+                    }
                 }
             } else {
                 Write-ShadowCatLog "[DRY RUN] Would install: $installCmd" -Level "Debug"
@@ -331,18 +372,33 @@ function Install-ScoopPackages {
                 # Check if running as admin
                 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
                 
-                if ($isAdmin) {
-                    Write-ShadowCatLog "Running as admin. Using non-admin Scoop installation..." -Level "Warning"
-                }
-                
-                # Use non-admin installation
-                Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+                # Set environment variables regardless of admin status
                 $env:SCOOP = Join-Path $env:USERPROFILE "scoop"
                 [environment]::setEnvironmentVariable('SCOOP', $env:SCOOP, 'User')
-                Invoke-RestMethod -Uri 'https://get.scoop.sh' | Invoke-Expression
+                
+                if ($isAdmin) {
+                    Write-ShadowCatLog "Running as admin. Using special Scoop installation method..." -Level "Warning"
+                    
+                    # Special handling for admin installation
+                    $env:SCOOP_GLOBAL = "C:\ProgramData\scoop"
+                    [environment]::setEnvironmentVariable('SCOOP_GLOBAL', $env:SCOOP_GLOBAL, 'Machine')
+                    
+                    # Use the iex installer that supports admin mode
+                    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+                    irm -useb get.scoop.sh | iex
+                }
+                else {
+                    # Standard non-admin installation
+                    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+                    Invoke-RestMethod -Uri 'https://get.scoop.sh' | Invoke-Expression
+                }
+                
+                # Add the app directory to PATH to ensure scoop commands work immediately
+                $env:PATH = "$env:SCOOP\shims;$env:PATH"
             }
             catch {
                 Write-ShadowCatLog "Failed to install Scoop: $($_.Exception.Message)" -Level "Error"
+                Write-ShadowCatLog "You may need to install Scoop manually. Visit https://scoop.sh for instructions." -Level "Warning"
             }
         }
     }
