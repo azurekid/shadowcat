@@ -23,6 +23,7 @@ param(
 )
 
 # Global variables for tracking
+$Global:ToolCategories = @{}
 $Global:ProcessedConfigs = @{}
 $Global:InstalledTools = @{}
 $Global:SkippedTools = @{}
@@ -242,6 +243,10 @@ function Test-ToolInstallation {
         }
     }
 
+    # Track tool category for folder organization
+    if ($tool.category) {
+        $Global:ToolCategories[$toolId] = $tool.category
+    }
     # Check for duplicates
     if ($Global:InstalledTools.ContainsKey($toolId)) {
         $existingSource = $Global:InstalledTools[$toolId]
@@ -462,6 +467,37 @@ function Install-PythonPackages {
 }
 
 # Show installation summary
+function Create-ToolCategoryFolders {
+    param([string]$BasePath)
+    Write-ShadowCatLog "Creating categorized tool folders..." -Level "Header"
+    $categories = $Global:ToolCategories.Values | Select-Object -Unique
+    foreach ($cat in $categories) {
+        $catFolder = Join-Path $BasePath $cat
+        if (-not (Test-Path $catFolder)) {
+            New-Item -Path $catFolder -ItemType Directory -Force | Out-Null
+            Write-ShadowCatLog "Created folder: $catFolder" -Level "Success"
+        }
+    }
+}
+
+function Set-DesktopBackground {
+    param([string]$ImageUrl)
+    Write-ShadowCatLog "Setting custom desktop background..." -Level "Header"
+    $wallpaperPath = "$env:TEMP\shadowcat_wallpaper.jpg"
+    try {
+        Invoke-WebRequest -Uri $ImageUrl -OutFile $wallpaperPath -UseBasicParsing
+        $code = @"
+[DllImport("user32.dll", SetLastError = true)]
+public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+"@
+        Add-Type -MemberDefinition $code -Name "Win32" -Namespace "Wallpaper" -PassThru
+        [Wallpaper.Win32]::SystemParametersInfo(20, 0, $wallpaperPath, 3) | Out-Null
+        Write-ShadowCatLog "Desktop background set successfully." -Level "Success"
+    } catch {
+        Write-ShadowCatLog "Failed to set desktop background: $($_.Exception.Message)" -Level "Error"
+    }
+}
+
 function Show-InstallationSummary {
     Write-Host "`n╔═══════════════════════════════════════════════════════════════════════╗" -ForegroundColor Green
     Write-Host "║                     Installation Summary                             ║" -ForegroundColor Green
@@ -489,9 +525,10 @@ function Show-InstallationSummary {
 
     Write-Host "`n🎯 NEXT STEPS:" -ForegroundColor Cyan
     Write-Host "   1. Restart PowerShell to activate ShadowCat profile" -ForegroundColor White
-    Write-Host "   2. Use 'bcat' command to navigate to tools" -ForegroundColor White
+    Write-Host "   2. Use 'bcat' command to navigate to tools" -ForegroundColor White  
     Write-Host "   3. Check tool-specific documentation for usage" -ForegroundColor White
     Write-Host "`n   Happy Hacking with ShadowCat! 🐱‍💻`n" -ForegroundColor Yellow
+}
 }
 
 # Main installation function
@@ -586,6 +623,13 @@ function Start-Installation {
             Install-PythonPackages -packages $config.python.packages -configName $config.metadata.name
         }
     }
+
+    # Create categorized tool folders after installation
+    Create-ToolCategoryFolders -BasePath (Join-Path $InstallPath "Tools")
+
+    # Set custom desktop background (change URL as desired)
+    $wallpaperUrl = "https://raw.githubusercontent.com/azurekid/shadowcat/main/docs/shadowcat_wallpaper.jpg"
+    Set-DesktopBackground -ImageUrl $wallpaperUrl
 
     # Show final summary
     Show-InstallationSummary
