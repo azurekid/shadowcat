@@ -487,11 +487,14 @@ function Set-DesktopBackground {
     try {
         Invoke-WebRequest -Uri $ImageUrl -OutFile $wallpaperPath -UseBasicParsing
         $code = @"
-[DllImport("user32.dll", SetLastError = true)]
-public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+using System.Runtime.InteropServices;
+public class Wallpaper {
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+}
 "@
-        Add-Type -MemberDefinition $code -Name "Win32" -Namespace "Wallpaper" -PassThru
-        [Wallpaper.Win32]::SystemParametersInfo(20, 0, $wallpaperPath, 3) | Out-Null
+        Add-Type -TypeDefinition $code -PassThru | Out-Null
+        [Wallpaper]::SystemParametersInfo(20, 0, $wallpaperPath, 3) | Out-Null
         Write-ShadowCatLog "Desktop background set successfully." -Level "Success"
     } catch {
         Write-ShadowCatLog "Failed to set desktop background: $($_.Exception.Message)" -Level "Error"
