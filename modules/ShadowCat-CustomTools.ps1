@@ -32,7 +32,9 @@ function Set-DesktopBackground {
     }
 }
 
-# Export functions - but only if not in IEX mode
-if (-not (Get-Variable -Name ShadowCatIEXMode -Scope Global -ErrorAction SilentlyContinue)) {
+# Export functions - Note: This line will be removed when running in IEX mode
+# The line below is needed only when this file is imported as a PowerShell module
+if ($MyInvocation.Line -notmatch 'IEX|Invoke-Expression' -and (Get-Command -Name Export-ModuleMember -ErrorAction SilentlyContinue)) {
+    # Only export if this is being loaded as a module (not via IEX)
     Export-ModuleMember -Function New-ToolCategoryFolders, Set-DesktopBackground
 }

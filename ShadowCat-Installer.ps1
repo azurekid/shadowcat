@@ -76,27 +76,12 @@ foreach ($moduleFile in $moduleFiles) {
             Write-Host "  [*] Downloading module: $moduleFile" -ForegroundColor Yellow
             $moduleContent = Invoke-WebRequest -Uri $moduleUrl -UseBasicParsing | Select-Object -ExpandProperty Content
             
-            # Add a conditional wrapper around Export-ModuleMember for IEX mode
-            $moduleContent = @"
-# IEX compatibility wrapper
-`$ExportModuleMember = `$function:Export-ModuleMember
-`$function:Export-ModuleMember = { 
-    param([string[]]`$Function) 
-    # Skip actual Export-ModuleMember in IEX mode to prevent errors
-    if (-not `$Global:ShadowCatIEXMode) {
-        & `$ExportModuleMember -Function `$Function
-    }
-}
-
-$moduleContent
-
-# Restore original Export-ModuleMember function if we changed it
-if (`$ExportModuleMember) {
-    `$function:Export-ModuleMember = `$ExportModuleMember
-}
-"@
+            # Remove all Export-ModuleMember lines that cause errors in IEX mode
+            $lines = $moduleContent -split "`n" | Where-Object { $_ -notmatch 'Export-ModuleMember' }
+            $moduleContent = $lines -join "`n"
+            
             Set-Content -Path $modulePath -Value $moduleContent -Force
-            Write-Host "  [✓] Downloaded module: $moduleFile" -ForegroundColor Green
+            Write-Host "  [✓] Downloaded module: $moduleFile (Modified for IEX compatibility)" -ForegroundColor Green
         }
         catch {
             Write-Host "  [✗] Failed to download module: $moduleFile" -ForegroundColor Red
