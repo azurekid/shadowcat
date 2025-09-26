@@ -259,11 +259,11 @@ function Test-ToolInstallation {
 
 function Install-ChocolateyPackages {
     param($packages, $configName)
-
+    
     if (-not $packages -or $packages.Count -eq 0) { return }
-
+    
     Write-ShadowCatLog "Processing Chocolatey packages from $configName..." -Level "Header"
-
+    
     if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
         Write-ShadowCatLog "Installing Chocolatey package manager..." -Level "Info"
         if (-not $DryRun) {
@@ -272,31 +272,39 @@ function Install-ChocolateyPackages {
             Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
         }
     }
-
+    
     $installedCount = 0
     $skippedCount = 0
-
+    
     foreach ($package in $packages) {
         $toolId = if ($package.toolId) { $package.toolId } else { $package.name }
-
+        
         if (-not (Test-ToolInstallation -tool $package -source "Chocolatey")) {
             $skippedCount++
             continue
         }
-
+        
         try {
             Write-ShadowCatLog "Installing $($package.name) - $($package.description)" -Level "Info"
-
+            
             if (-not $DryRun) {
-                $installCmd = "choco install $($package.name) -y"
-                if ($package.arguments) {
-                    $installCmd += " $($package.arguments)"
+                # Check if package is already installed
+                $chocoList = choco list --local-only $($package.name) -r
+                $isInstalled = $chocoList -match "^$($package.name)\|"
+                
+                if ($isInstalled) {
+                    Write-ShadowCatLog "$($package.name) is already installed, skipping." -Level "Info"
+                } else {
+                    $installCmd = "choco install $($package.name) -y"
+                    if ($package.arguments) {
+                        $installCmd += " $($package.arguments)"
+                    }
+                    Invoke-Expression $installCmd
                 }
-                Invoke-Expression $installCmd
             } else {
                 Write-ShadowCatLog "[DRY RUN] Would install: $installCmd" -Level "Debug"
             }
-
+            
             $Global:InstalledTools[$toolId] = "Chocolatey"
             $installedCount++
             Write-ShadowCatLog "Successfully processed $($package.name)" -Level "Success"
@@ -304,28 +312,41 @@ function Install-ChocolateyPackages {
         catch {
             Write-ShadowCatLog "Failed to install $($package.name): $($_.Exception.Message)" -Level "Error"
         }
-    }
-
-    Write-ShadowCatLog "Chocolatey summary: $installedCount installed, $skippedCount skipped" -Level "Info"
+    }    Write-ShadowCatLog "Chocolatey summary: $installedCount installed, $skippedCount skipped" -Level "Info"
 }
 
 # Scoop installation
 function Install-ScoopPackages {
     param($scoopConfig, $configName)
-
+    
     if (-not $scoopConfig -or $scoopConfig.packages.Count -eq 0) { return }
-
+    
     Write-ShadowCatLog "Processing Scoop packages from $configName..." -Level "Header"
-
+    
     # Ensure Scoop is installed
     if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
         Write-ShadowCatLog "Installing Scoop package manager..." -Level "Info"
         if (-not $DryRun) {
-            Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-            Invoke-RestMethod get.scoop.sh | Invoke-Expression
+            try {
+                # Check if running as admin
+                $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+                
+                if ($isAdmin) {
+                    Write-ShadowCatLog "Running as admin. Using non-admin Scoop installation..." -Level "Warning"
+                }
+                
+                # Use non-admin installation
+                Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+                $env:SCOOP = Join-Path $env:USERPROFILE "scoop"
+                [environment]::setEnvironmentVariable('SCOOP', $env:SCOOP, 'User')
+                Invoke-RestMethod -Uri 'https://get.scoop.sh' | Invoke-Expression
+            }
+            catch {
+                Write-ShadowCatLog "Failed to install Scoop: $($_.Exception.Message)" -Level "Error"
+            }
         }
     }
-
+    
     # Add required buckets
     if ($scoopConfig.buckets -and -not $DryRun) {
         foreach ($bucket in $scoopConfig.buckets) {
@@ -337,9 +358,7 @@ function Install-ScoopPackages {
                 Write-ShadowCatLog "Warning: Could not add bucket $bucket" -Level "Warning"
             }
         }
-    }
-
-    $installedCount = 0
+    }    $installedCount = 0
     $skippedCount = 0
 
     foreach ($package in $scoopConfig.packages) {
