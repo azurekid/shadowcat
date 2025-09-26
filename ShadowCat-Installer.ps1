@@ -481,15 +481,10 @@ function Set-DesktopBackground {
     $wallpaperPath = "$env:TEMP\shadowcat_wallpaper.jpg"
     try {
         Invoke-WebRequest -Uri $ImageUrl -OutFile $wallpaperPath -UseBasicParsing
-        $code = @"
-using System.Runtime.InteropServices;
-public class Wallpaper {
-    [DllImport("user32.dll", SetLastError = true)]
-    public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
-}
-"@
-        Add-Type -TypeDefinition $code -PassThru | Out-Null
-        [Wallpaper]::SystemParametersInfo(20, 0, $wallpaperPath, 3) | Out-Null
+        # Set registry key for wallpaper
+        Set-ItemProperty -Path 'HKCU:\Control Panel\Desktop' -Name Wallpaper -Value $wallpaperPath
+        # Refresh desktop to apply wallpaper
+        rundll32.exe user32.dll,UpdatePerUserSystemParameters
         Write-ShadowCatLog "Desktop background set successfully." -Level "Success"
     } catch {
         Write-ShadowCatLog "Failed to set desktop background: $($_.Exception.Message)" -Level "Error"
