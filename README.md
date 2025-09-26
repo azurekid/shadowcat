@@ -58,10 +58,21 @@ ShadowCat organizes security tools into specialized categories for different use
 
 ### One-Click Installation
 
+ShadowCat offers two versions of the installer:
+
+#### Standard Installer (Modular)
 ```powershell
-# Download and run the installer
+# Download and run the standard modular installer
 iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/azurekid/shadowcat/main/ShadowCat-Installer.ps1'))
 ```
+
+#### IEX-Compatible Installer (Self-contained)
+```powershell
+# Download and run the self-contained IEX-compatible installer
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/azurekid/shadowcat/main/ShadowCat-IEX-Installer.ps1'))
+```
+
+> **Note:** The IEX-compatible version includes all modules in a single file for environments where module loading is restricted.
 
 ### Custom Installation
 
@@ -313,6 +324,32 @@ This modular approach ensures ShadowCat remains **maintainable**, **flexible**, 
 
 ---
 
+## Modular Architecture
+
+ShadowCat has been redesigned with a modular architecture for improved maintainability, flexibility, and performance. The installer is now split into specialized modules that handle different aspects of the installation process.
+
+### Module Structure
+
+| Module File | Description | Responsibility |
+|-------------|-------------|----------------|
+| `UI.ps1` | User interface functions | Handles all console output, progress bars, and user interaction |
+| `Config.ps1` | Configuration processing | Manages JSON config loading, validation, and dependency resolution |
+| `PackageManagers.ps1` | Package installation | Handles Chocolatey, Scoop, and other package managers |
+| `CustomTools.ps1` | Custom tool installation | Manages GitHub repositories, Python packages, and custom installations |
+
+### Installation Options
+
+ShadowCat offers multiple installation methods to accommodate different environments:
+
+1. **Standard Installation**: Uses the modular `ShadowCat-Installer.ps1` script which loads separate module files
+2. **IEX-Compatible Installation**: Uses the self-contained `ShadowCat-IEX-Installer.ps1` script that works in environments where module loading is restricted
+3. **Local Installation**: Clones the repository and runs the installer locally
+4. **Online Installation**: Fetches configuration files directly from GitHub using the `-Online` parameter
+
+For more detailed information, see the [BlackCat-Modular-Guide.md](BlackCat-Modular-Guide.md) file.
+
+---
+
 ## Community & Contributions
 
 ShadowCat thrives on community collaboration! We welcome contributions from security professionals worldwide.
@@ -339,20 +376,26 @@ ShadowCat thrives on community collaboration! We welcome contributions from secu
 
 ```
 shadowcat/
-├── 📄 ShadowCat-Installer.ps1              # Main installation script
+├── 📄 ShadowCat-Installer.ps1              # Main modular installation script
+├── 📄 ShadowCat-IEX-Installer.ps1          # Self-contained IEX-compatible installer
 ├── 📄 ShadowCat-ConfigManager.ps1          # Configuration management
-├── 📄 shadowcat-Modular-Guide.md            # Detailed installation guide
+├── 📄 BlackCat-Modular-Guide.md            # Detailed installation guide
+├── 📁 modules/                             # Modular components
+│   ├── UI.ps1                              # User interface functions
+│   ├── Config.ps1                          # Configuration handling
+│   ├── PackageManagers.ps1                 # Package manager operations
+│   └── CustomTools.ps1                     # Custom tool installations
 ├── 📁 configs/                             # Tool configuration files
-│   ├── shadowcat-redteam-tools.json         # Red team frameworks
-│   ├── shadowcat-osint-tools.json           # OSINT and reconnaissance
-│   ├── shadowcat-web-tools.json             # Web application testing
-│   ├── shadowcat-mobile-tools.json          # Mobile security testing
-│   ├── shadowcat-forensics-tools.json       # Digital forensics
-│   ├── shadowcat-essential-tools.json       # Core utilities
-│   ├── shadowcat-lite-profile.json          # Lightweight installation
-│   └── shadowcat-professional-profile.json  # Complete toolset
+│   ├── blackcat-redteam-tools.json         # Red team frameworks
+│   ├── blackcat-osint-tools.json           # OSINT and reconnaissance
+│   ├── blackcat-web-tools.json             # Web application testing
+│   ├── blackcat-mobile-tools.json          # Mobile security testing
+│   ├── blackcat-forensics-tools.json       # Digital forensics
+│   ├── blackcat-essential-tools.json       # Core utilities
+│   ├── blackcat-lite-profile.json          # Lightweight installation
+│   └── blackcat-professional-profile.json  # Complete toolset
 ├── 📁 docs/                                # Documentation folder
-│   └── ShadowCat-ConfigManager.md          # Config manager documentation
+│   └── BlackCat-ConfigManager.md           # Config manager documentation
 └── 📄 README.md                            # This file
 ```
 
