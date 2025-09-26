@@ -1,0 +1,178 @@
+{
+  "metadata": {
+    "name": "BlackCat Security Toolkit - Web Testing Configuration",
+    "version": "1.0.0",
+    "description": "Web application security testing tools",
+    "author": "Project BlackCat", 
+    "lastUpdated": "2024-09-26",
+    "category": "WebTesting",
+    "installLevel": "standard",
+    "dependencies": ["blackcat-core-base.json"]
+  },
+  "chocolatey": {
+    "packages": [
+      {
+        "name": "zap",
+        "description": "OWASP Zed Attack Proxy",
+        "category": "Web Scanners",
+        "required": true,
+        "installLevel": "standard",
+        "toolId": "owasp-zap",
+        "arguments": ""
+      },
+      {
+        "name": "nikto",
+        "description": "Web server scanner",
+        "category": "Web Scanners",
+        "required": true,
+        "installLevel": "standard", 
+        "toolId": "nikto",
+        "arguments": ""
+      }
+    ]
+  },
+  "scoop": {
+    "buckets": ["main", "extras"],
+    "packages": [
+      {
+        "name": "main/wpscan",
+        "description": "WordPress security scanner",
+        "category": "CMS Testing",
+        "required": true,
+        "arguments": ""
+      },
+      {
+        "name": "main/whatweb",
+        "description": "Web technology identifier",
+        "category": "Web Reconnaissance",
+        "required": true,
+        "arguments": ""
+      },
+      {
+        "name": "main/wafw00f",
+        "description": "Web Application Firewall detector",
+        "category": "Web Reconnaissance",
+        "required": true,
+        "arguments": ""
+      },
+      {
+        "name": "main/dirb",
+        "description": "Web content scanner",
+        "category": "Directory Enumeration",
+        "required": true,
+        "arguments": ""
+      },
+      {
+        "name": "main/wfuzz",
+        "description": "Web application fuzzer",
+        "category": "Fuzzing",
+        "required": true,
+        "arguments": ""
+      }
+    ]
+  },
+  "github": {
+    "projects": [
+      {
+        "name": "XSStrike",
+        "url": "https://github.com/s0md3v/XSStrike",
+        "description": "Advanced XSS detection suite",
+        "category": "XSS Testing",
+        "destination": "WebTesting/XSS/XSStrike"
+      },
+      {
+        "name": "Commix",
+        "url": "https://github.com/commixproject/commix",
+        "description": "Command injection exploitation tool",
+        "category": "Injection Testing",
+        "destination": "WebTesting/Injection/Commix"
+      },
+      {
+        "name": "NoSQLMap",
+        "url": "https://github.com/codingo/NoSQLMap",
+        "description": "NoSQL injection and enumeration tool",
+        "category": "Database Testing",
+        "destination": "WebTesting/Database/NoSQLMap"
+      },
+      {
+        "name": "JWT_Tool",
+        "url": "https://github.com/ticarpi/jwt_tool",
+        "description": "JSON Web Token manipulation toolkit",
+        "category": "Authentication Testing",
+        "destination": "WebTesting/JWT/JWT_Tool"
+      },
+      {
+        "name": "Arjun",
+        "url": "https://github.com/s0md3v/Arjun",
+        "description": "HTTP parameter discovery suite",
+        "category": "Parameter Discovery",
+        "destination": "WebTesting/Parameters/Arjun"
+      },
+      {
+        "name": "LinkFinder",
+        "url": "https://github.com/GerbenJavado/LinkFinder",
+        "description": "Discover endpoints in JavaScript files",
+        "category": "JavaScript Analysis",
+        "destination": "WebTesting/JavaScript/LinkFinder"
+      },
+      {
+        "name": "SecretFinder",
+        "url": "https://github.com/m4ll0k/SecretFinder",
+        "description": "Find sensitive data in JavaScript files",
+        "category": "JavaScript Analysis",
+        "destination": "WebTesting/JavaScript/SecretFinder"
+      },
+      {
+        "name": "CORScanner",
+        "url": "https://github.com/chenjj/CORScanner",
+        "description": "CORS vulnerability scanner",
+        "category": "CORS Testing",
+        "destination": "WebTesting/CORS/CORScanner"
+      },
+      {
+        "name": "Tplmap",
+        "url": "https://github.com/epinna/tplmap",
+        "description": "Server-Side Template Injection tool",
+        "category": "Template Injection",
+        "destination": "WebTesting/SSTI/Tplmap"
+      },
+      {
+        "name": "Parameth",
+        "url": "https://github.com/maK-/parameth",
+        "description": "Parameter discovery for GET and POST requests",
+        "category": "Parameter Discovery", 
+        "destination": "WebTesting/Parameters/Parameth"
+      },
+      {
+        "name": "Feroxbuster",
+        "url": "https://github.com/epi052/feroxbuster",
+        "description": "Fast, simple, recursive content discovery tool",
+        "category": "Directory Enumeration",
+        "destination": "WebTesting/Discovery/Feroxbuster"
+      },
+      {
+        "name": "Cariddi",
+        "url": "https://github.com/edoardottt/cariddi",
+        "description": "Web crawler for bug bounty",
+        "category": "Web Crawling",
+        "destination": "WebTesting/Crawling/Cariddi"
+      }
+    ]
+  },
+  "python": {
+    "packages": [
+      {
+        "name": "commix",
+        "description": "Command injection exploitation tool",
+        "category": "Injection Testing",
+        "required": true
+      },
+      {
+        "name": "xsstrike",
+        "description": "Advanced XSS detection suite", 
+        "category": "XSS Testing",
+        "required": true
+      }
+    ]
+  }
+}

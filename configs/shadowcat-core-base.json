@@ -1,0 +1,108 @@
+{
+  "metadata": {
+    "name": "BlackCat Security Toolkit - Core Base Configuration",
+    "version": "1.0.0",
+    "description": "Minimal core tools required by all configurations",
+    "author": "Project BlackCat",
+    "lastUpdated": "2024-09-26",
+    "category": "Base",
+    "installLevel": "lite",
+    "dependencies": []
+  },
+  "chocolatey": {
+    "packages": [
+      {
+        "name": "git",
+        "description": "Distributed version control system",
+        "category": "Development",
+        "required": true,
+        "installLevel": "lite",
+        "toolId": "git",
+        "arguments": ""
+      },
+      {
+        "name": "python3",
+        "description": "Python programming language",
+        "category": "Runtime",
+        "required": true,
+        "installLevel": "lite",
+        "toolId": "python3",
+        "arguments": ""
+      },
+      {
+        "name": "7zip",
+        "description": "File archiver with high compression ratio", 
+        "category": "Utilities",
+        "required": true,
+        "installLevel": "lite",
+        "toolId": "7zip",
+        "arguments": ""
+      },
+      {
+        "name": "golang",
+        "description": "Go programming language",
+        "category": "Runtime",
+        "required": true,
+        "installLevel": "lite",
+        "toolId": "golang",
+        "arguments": ""
+      }
+    ]
+  },
+  "scoop": {
+    "buckets": ["main"],
+    "packages": [
+      {
+        "name": "main/curl",
+        "description": "Command line tool for transferring data",
+        "category": "Network Utilities",
+        "required": true,
+        "installLevel": "lite", 
+        "toolId": "curl",
+        "arguments": ""
+      },
+      {
+        "name": "main/wget",
+        "description": "Network downloader",
+        "category": "Network Utilities",
+        "required": true,
+        "installLevel": "lite",
+        "toolId": "wget",
+        "arguments": ""
+      }
+    ]
+  },
+  "github": {
+    "projects": [
+      {
+        "name": "NetExec",
+        "url": "https://github.com/Pennyw0rth/NetExec",
+        "description": "Network execution toolkit for penetration testing (formerly CrackMapExec)",
+        "category": "Network Exploitation",
+        "destination": "NetworkScanning/NetExec",
+        "installLevel": "lite",
+        "toolId": "netexec-github"
+      }
+    ]
+  },
+  "python": {
+    "packages": [
+      {
+        "name": "requests",
+        "description": "HTTP library for Python",
+        "category": "HTTP Utilities",
+        "required": true,
+        "installLevel": "lite",
+        "toolId": "python-requests"
+      },
+      {
+        "name": "netexec",
+        "description": "Network execution toolkit for penetration testing (formerly CrackMapExec)",
+        "category": "Network Exploitation",
+        "required": true,
+        "installLevel": "lite",
+        "toolId": "python-netexec"
+      }
+    ]
+  }
+}

@@ -1,17 +1,6 @@
-![logo](/media/shadowcat.png?raw=true)
+![Mr Robot fonts](https://see.fontimg.com/api/renderfont4/g123/eyJyIjoiZnMiLCJoIjoxMjUsInciOjE1MDAsImZzIjo4MywiZmdjIjoiI0VGMDkwOSIsImJnYyI6IiMxMTAwMDAiLCJ0IjoxfQ/cyBoIGEgZCBvIHcgYyBAIHQ=/mrrobot.png)
 
-<div align="center">
-
-Languages & Tools
-=================
-
-<img width="50" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/powershell/powershell-original.svg" alt="PowerShell" title=PowerShell />
-<br>
-<br>
-
-</div>
-
-# ShadowCat - Windows Security Research Platform
+## ShadowCat - Windows Security Research Platform
 
 <div align="center">
 
@@ -43,7 +32,7 @@ ShadowCat is a **comprehensive, modular Windows security platform** designed by 
 
 ---
 
-## 🛠️ Tool Categories
+## Tool Categories
 
 ShadowCat organizes security tools into specialized categories for different use cases:
 
@@ -120,6 +109,175 @@ Choose the profile that matches your needs and system capabilities:
 - **~50GB disk space**
 - **16GB+ RAM recommended**
 - Full red team, forensics, and research capabilities
+
+---
+
+## Modular JSON Configuration System
+
+ShadowCat's power lies in its **modular JSON-based configuration system** that allows for flexible, maintainable, and customizable tool installations. Each configuration file is a self-contained blueprint that defines tools, dependencies, and installation parameters.
+
+### Configuration Architecture
+
+#### **Configuration Types**
+- **Category Configs**: Specialized tool collections (`blackcat-redteam-tools.json`, `blackcat-web-tools.json`)
+- **Profile Configs**: Complete installation profiles (`blackcat-professional-profile.json`, `blackcat-lite-profile.json`)
+- **Base Configs**: Core dependencies shared across configurations (`blackcat-core-base.json`)
+
+#### **JSON Structure**
+```json
+{
+  "metadata": {
+    "name": "Configuration Name",
+    "version": "1.0.0",
+    "description": "Detailed description of tools included",
+    "author": "Author Name",
+    "lastUpdated": "2024-09-26",
+    "category": "RedTeam|OSINT|Web|Mobile|Forensics|Essential|Profile|Base",
+    "installLevel": "lite|standard|professional",
+    "dependencies": ["other-config-files.json"]
+  },
+  "chocolatey": {
+    "packages": [
+      {
+        "name": "tool-name",
+        "description": "Tool description",
+        "category": "Tool category",
+        "required": true,
+        "installLevel": "lite|standard|professional", 
+        "toolId": "unique-identifier",
+        "arguments": "additional-install-args"
+      }
+    ]
+  },
+  "github": {
+    "projects": [
+      {
+        "url": "https://github.com/author/repo",
+        "destination": "Tools\\RepoName",
+        "description": "GitHub project description",
+        "category": "Tool category",
+        "installLevel": "lite|standard|professional",
+        "toolId": "unique-identifier"
+      }
+    ]
+  }
+}
+```
+
+### Key Configuration Features
+
+#### ** Dependency Resolution**
+- Configurations can declare dependencies on other config files
+- The installer automatically resolves and merges dependency chains
+- Prevents circular dependencies and ensures proper installation order
+- Example: Professional profile depends on core base, essential tools, and specialized categories
+
+#### ** Duplicate Prevention**
+- Each tool has a unique `toolId` that prevents duplicate installations
+- Tools referenced in multiple configs are installed only once
+- Shared dependencies (Python, Git, etc.) are centralized in base configurations
+
+#### ** Multi-Level Installation**
+- **Lite**: Essential tools only (`installLevel: "lite"`)
+- **Standard**: Balanced toolset (`installLevel: "standard"`) 
+- **Professional**: Complete arsenal (`installLevel: "professional"`)
+- **All**: Install everything regardless of level (`-InstallLevel all`)
+
+#### ** Custom Configuration Creation**
+Create your own configurations by following the JSON schema:
+
+```powershell
+# Example: Create a custom DFIR (Digital Forensics & Incident Response) config
+{
+  "metadata": {
+    "name": "Custom DFIR Toolkit",
+    "version": "1.0.0", 
+    "description": "Specialized tools for digital forensics and incident response",
+    "author": "Your Name",
+    "category": "Custom",
+    "installLevel": "standard",
+    "dependencies": ["blackcat-core-base.json"]
+  },
+  "chocolatey": {
+    "packages": [
+      {
+        "name": "autopsy",
+        "description": "Digital forensics platform",
+        "category": "Forensics",
+        "required": true,
+        "installLevel": "standard",
+        "toolId": "autopsy"
+      }
+    ]
+  }
+}
+```
+
+### Configuration Examples
+
+#### **Quick Category Installation**
+```powershell
+# Install only OSINT tools
+.\BlackCat-Enhanced-Installer.ps1 -ConfigFiles "configs\blackcat-osint-tools.json"
+
+# Install web security tools at professional level  
+.\BlackCat-Enhanced-Installer.ps1 -ConfigFiles "configs\blackcat-web-tools.json" -InstallLevel professional
+```
+
+#### **Multi-Configuration Installation**
+```powershell
+# Install multiple categories simultaneously
+.\BlackCat-Enhanced-Installer.ps1 -ConfigFiles @(
+    "configs\blackcat-redteam-tools.json",
+    "configs\blackcat-forensics-tools.json", 
+    "configs\blackcat-osint-tools.json"
+)
+```
+
+#### **Profile-Based Installation**
+```powershell
+# Install complete professional profile (includes all dependencies)
+.\BlackCat-Enhanced-Installer.ps1 -ConfigFiles "configs\blackcat-professional-profile.json"
+
+# Lite installation for resource-constrained systems
+.\BlackCat-Enhanced-Installer.ps1 -ConfigFiles "configs\blackcat-lite-profile.json"
+```
+
+### 🔍 Available Configurations
+
+| Configuration File | Category | Tools | Dependencies | Best For |
+|-------------------|----------|--------|--------------|----------|
+| `blackcat-core-base.json` | Base | Core utilities (Git, Python, Go) | None | Required by all configs |
+| `blackcat-essential-tools.json` | Essential | Network, debug, utilities | Core base | All installations |
+| `blackcat-redteam-tools.json` | Red Team | C2, post-exploitation | Core base | Offensive operations |
+| `blackcat-osint-tools.json` | OSINT | Reconnaissance, HUMINT | Core base | Information gathering |
+| `blackcat-web-tools.json` | Web Security | Web app testing, API fuzzing | Core base | Web penetration testing |
+| `blackcat-mobile-tools.json` | Mobile | Android/iOS testing | Core base | Mobile security testing |
+| `blackcat-forensics-tools.json` | Forensics | Digital investigation | Core base | Incident response |
+| `blackcat-lite-profile.json` | Profile | Essential tools only | Multiple configs | Beginners, low resources |
+| `blackcat-professional-profile.json` | Profile | Complete toolset | All category configs | Advanced users |
+
+### Advanced Configuration Management
+
+#### **Configuration Validation**
+```powershell
+# Validate configuration syntax before installation
+.\BlackCat-ConfigManager.ps1 -ValidateConfig "configs\your-config.json"
+
+# Preview what would be installed (dry run)
+.\BlackCat-Enhanced-Installer.ps1 -ConfigFiles "configs\blackcat-web-tools.json" -DryRun
+```
+
+#### **Dependency Analysis**
+```powershell  
+# Analyze configuration dependencies
+.\BlackCat-ConfigManager.ps1 -AnalyzeDependencies "configs\blackcat-professional-profile.json"
+
+# List all tools that would be installed
+.\BlackCat-ConfigManager.ps1 -ListTools "configs\blackcat-redteam-tools.json"
+```
+
+This modular approach ensures ShadowCat remains **maintainable**, **flexible**, and **community-friendly** while providing enterprise-grade tool management capabilities.
 
 ---
 
@@ -220,7 +378,7 @@ shadowcat/
 - **[Configuration Reference](configs/)**: Details on all available tool configurations
 - **[Security Guidelines](SECURITY.md)**: Security best practices and reporting
 
-### 💬 Getting Help
+### Getting Help
 
 - **GitHub Issues**: [Report bugs or request features](https://github.com/azurekid/shadowcat/issues)
 - **Discussions**: [Community Q&A and tool discussions](https://github.com/azurekid/shadowcat/discussions)

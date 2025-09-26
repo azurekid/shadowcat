@@ -1,0 +1,143 @@
+{
+  "metadata": {
+    "name": "BlackCat Security Toolkit - Mobile Security Configuration",
+    "version": "1.0.0",
+    "description": "Mobile application security testing tools",
+    "author": "Project BlackCat",
+    "lastUpdated": "2024-09-26",
+    "category": "MobileSecurity"
+  },
+  "chocolatey": {
+    "packages": [
+      {
+        "name": "adb",
+        "description": "Android Debug Bridge",
+        "category": "Android Tools",
+        "required": true,
+        "arguments": ""
+      }
+    ]
+  },
+  "scoop": {
+    "buckets": ["main", "extras"],
+    "packages": [
+      {
+        "name": "main/scrcpy",
+        "description": "Android device screen mirroring",
+        "category": "Android Tools",
+        "required": true,
+        "arguments": ""
+      }
+    ]
+  },
+  "github": {
+    "projects": [
+      {
+        "name": "MobSF",
+        "url": "https://github.com/MobSF/Mobile-Security-Framework-MobSF",
+        "description": "Mobile Security Framework for Android/iOS apps",
+        "category": "Mobile Testing Framework",
+        "destination": "Mobile/MobSF"
+      },
+      {
+        "name": "frida",
+        "url": "https://github.com/frida/frida",
+        "description": "Dynamic instrumentation toolkit",
+        "category": "Dynamic Analysis",
+        "destination": "Mobile/Frida"
+      },
+      {
+        "name": "objection",
+        "url": "https://github.com/sensepost/objection",
+        "description": "Runtime mobile exploration toolkit powered by Frida",
+        "category": "Dynamic Analysis",
+        "destination": "Mobile/Objection"
+      },
+      {
+        "name": "drozer",
+        "url": "https://github.com/FSecureLABS/drozer",
+        "description": "Security testing framework for Android",
+        "category": "Android Testing",
+        "destination": "Mobile/Android/Drozer"
+      },
+      {
+        "name": "QARK",
+        "url": "https://github.com/linkedin/qark",
+        "description": "Quick Android Review Kit",
+        "category": "Static Analysis",
+        "destination": "Mobile/Android/QARK"
+      },
+      {
+        "name": "APKTool",
+        "url": "https://github.com/iBotPeaches/Apktool",
+        "description": "Tool for reverse engineering APK files",
+        "category": "APK Analysis",
+        "destination": "Mobile/Android/APKTool"
+      },
+      {
+        "name": "dex2jar",
+        "url": "https://github.com/pxb1988/dex2jar",
+        "description": "Tools to work with android .dex and java .class files",
+        "category": "APK Analysis", 
+        "destination": "Mobile/Android/dex2jar"
+      },
+      {
+        "name": "Androguard",
+        "url": "https://github.com/androguard/androguard",
+        "description": "Reverse engineering, malware and goodware analysis",
+        "category": "APK Analysis",
+        "destination": "Mobile/Android/Androguard"
+      },
+      {
+        "name": "iOSSecuritySuite",
+        "url": "https://github.com/securing/IOSSecuritySuite",
+        "description": "iOS penetration testing suite",
+        "category": "iOS Testing",
+        "destination": "Mobile/iOS/SecuritySuite"
+      },
+      {
+        "name": "needle",
+        "url": "https://github.com/FSecureLABS/needle",
+        "description": "iOS security testing framework",
+        "category": "iOS Testing",
+        "destination": "Mobile/iOS/Needle"
+      },
+      {
+        "name": "idb",
+        "url": "https://github.com/dmayer/idb",
+        "description": "iOS App Security Assessment tool",
+        "category": "iOS Testing",
+        "destination": "Mobile/iOS/idb"
+      },
+      {
+        "name": "class-dump",
+        "url": "https://github.com/nygard/class-dump",
+        "description": "Generate Objective-C headers from Mach-O files",
+        "category": "iOS Analysis",
+        "destination": "Mobile/iOS/class-dump"
+      }
+    ]
+  },
+  "python": {
+    "packages": [
+      {
+        "name": "frida-tools",
+        "description": "Dynamic instrumentation toolkit for developers",
+        "category": "Dynamic Analysis",
+        "required": true
+      },
+      {
+        "name": "objection",
+        "description": "Runtime mobile exploration toolkit",
+        "category": "Dynamic Analysis", 
+        "required": true
+      },
+      {
+        "name": "androguard",
+        "description": "Reverse engineering and malware analysis of Android applications",
+        "category": "APK Analysis",
+        "required": true
+      }
+    ]
+  }
+}

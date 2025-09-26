@@ -1,0 +1,60 @@
+{
+  "metadata": {
+    "name": "BlackCat Security Toolkit - Lite Profile",
+    "version": "1.0.0", 
+    "description": "Lightweight security toolkit for basic penetration testing",
+    "author": "Project BlackCat",
+    "lastUpdated": "2024-09-26",
+    "category": "Profile",
+    "installLevel": "lite",
+    "dependencies": ["blackcat-core-base.json"]
+  },
+  "chocolatey": {
+    "packages": [
+      {
+        "name": "nmap",
+        "description": "Network discovery and security auditing tool",
+        "category": "Network Scanning",
+        "required": true,
+        "installLevel": "lite",
+        "toolId": "nmap",
+        "arguments": ""
+      },
+      {
+        "name": "putty",
+        "description": "SSH and Telnet client", 
+        "category": "Remote Access",
+        "required": true,
+        "installLevel": "lite",
+        "toolId": "putty",
+        "arguments": ""
+      }
+    ]
+  },
+  "scoop": {
+    "buckets": ["main"],
+    "packages": [
+      {
+        "name": "main/ncat",
+        "description": "Network connectivity tool",
+        "category": "Network Utilities",
+        "required": true,
+        "installLevel": "lite",
+        "toolId": "ncat",
+        "arguments": ""
+      }
+    ]
+  },
+  "python": {
+    "packages": [
+      {
+        "name": "python-nmap",
+        "description": "Python library for nmap",
+        "category": "Network Libraries",
+        "required": false,
+        "installLevel": "lite",
+        "toolId": "python-nmap"
+      }
+    ]
+  }
+}

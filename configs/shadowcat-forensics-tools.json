@@ -1,0 +1,185 @@
+{
+  "metadata": {
+    "name": "BlackCat Security Toolkit - Forensics Configuration",
+    "version": "1.0.0",
+    "description": "Digital forensics and incident response tools",
+    "author": "Project BlackCat",
+    "lastUpdated": "2024-09-26", 
+    "category": "Forensics"
+  },
+  "chocolatey": {
+    "packages": [
+      {
+        "name": "volatility",
+        "description": "Advanced memory forensics framework",
+        "category": "Memory Analysis",
+        "required": true,
+        "arguments": ""
+      },
+      {
+        "name": "autopsy",
+        "description": "Digital forensics platform",
+        "category": "Disk Forensics",
+        "required": true,
+        "arguments": ""
+      },
+      {
+        "name": "sleuthkit",
+        "description": "Collection of command line tools for digital forensics",
+        "category": "Disk Forensics",
+        "required": true,
+        "arguments": ""
+      },
+      {
+        "name": "hashmyfiles",
+        "description": "Calculate MD5/SHA hashes of files",
+        "category": "File Analysis",
+        "required": true,
+        "arguments": ""
+      },
+      {
+        "name": "exifcleaner",
+        "description": "Metadata removal tool",
+        "category": "Metadata Analysis",
+        "required": false,
+        "arguments": ""
+      }
+    ]
+  },
+  "scoop": {
+    "buckets": ["main", "extras"],
+    "packages": [
+      {
+        "name": "main/strings",
+        "description": "Extract strings from binary files",
+        "category": "Binary Analysis",
+        "required": true,
+        "arguments": ""
+      },
+      {
+        "name": "main/bulk-extractor",
+        "description": "Scan digital evidence for useful information",
+        "category": "Data Recovery",
+        "required": true,
+        "arguments": ""
+      },
+      {
+        "name": "main/hexdump",
+        "description": "Hex dump utility",
+        "category": "Binary Analysis",
+        "required": true,
+        "arguments": ""
+      }
+    ]
+  },
+  "github": {
+    "projects": [
+      {
+        "name": "Volatility3",
+        "url": "https://github.com/volatilityfoundation/volatility3",
+        "description": "Advanced memory forensics framework",
+        "category": "Memory Analysis",
+        "destination": "Forensics/Memory/Volatility3"
+      },
+      {
+        "name": "YARA",
+        "url": "https://github.com/VirusTotal/yara",
+        "description": "Pattern matching engine for malware research",
+        "category": "Malware Analysis",
+        "destination": "Forensics/YARA"
+      },
+      {
+        "name": "Autopsy",
+        "url": "https://github.com/sleuthkit/autopsy", 
+        "description": "Digital forensics platform",
+        "category": "Disk Forensics",
+        "destination": "Forensics/Autopsy"
+      },
+      {
+        "name": "RegRipper3.0",
+        "url": "https://github.com/keydet89/RegRipper3.0",
+        "description": "Windows registry forensics tool",
+        "category": "Registry Analysis",
+        "destination": "Forensics/Registry/RegRipper"
+      },
+      {
+        "name": "chainsaw",
+        "url": "https://github.com/countercept/chainsaw",
+        "description": "Rapidly search and hunt through Windows event logs",
+        "category": "Log Analysis",
+        "destination": "Forensics/Logs/Chainsaw"
+      },
+      {
+        "name": "hayabusa",
+        "url": "https://github.com/Yamato-Security/hayabusa",
+        "description": "Windows event log fast forensics timeline generator",
+        "category": "Log Analysis",
+        "destination": "Forensics/Logs/Hayabusa"
+      },
+      {
+        "name": "plaso",
+        "url": "https://github.com/log2timeline/plaso",
+        "description": "Super timeline all the things",
+        "category": "Timeline Analysis",
+        "destination": "Forensics/Timeline/Plaso"
+      },
+      {
+        "name": "CyberChef",
+        "url": "https://github.com/gchq/CyberChef",
+        "description": "Cyber Swiss Army Knife for encoding/decoding/analysis",
+        "category": "Data Analysis",
+        "destination": "Forensics/Analysis/CyberChef"
+      },
+      {
+        "name": "KAPE",
+        "url": "https://github.com/EricZimmerman/KapeFiles",
+        "description": "Kroll Artifact Parser and Extractor targets",
+        "category": "Artifact Collection",
+        "destination": "Forensics/KAPE"
+      },
+      {
+        "name": "ShellBags",
+        "url": "https://github.com/EricZimmerman/ShellBags",
+        "description": "ShellBags forensics tool",
+        "category": "Registry Analysis",
+        "destination": "Forensics/Registry/ShellBags"
+      },
+      {
+        "name": "LECmd", 
+        "url": "https://github.com/EricZimmerman/LECmd",
+        "description": "LNK file parser",
+        "category": "File Analysis",
+        "destination": "Forensics/Files/LECmd"
+      },
+      {
+        "name": "JLECmd",
+        "url": "https://github.com/EricZimmerman/JLECmd", 
+        "description": "Windows Jump List parser",
+        "category": "File Analysis",
+        "destination": "Forensics/Files/JLECmd"
+      }
+    ]
+  },
+  "python": {
+    "packages": [
+      {
+        "name": "volatility3",
+        "description": "Advanced memory forensics framework",
+        "category": "Memory Analysis",
+        "required": true
+      },
+      {
+        "name": "yara-python",
+        "description": "Python bindings for YARA", 
+        "category": "Malware Analysis",
+        "required": true
+      },
+      {
+        "name": "pefile",
+        "description": "Python module to read and work with PE files",
+        "category": "File Analysis",
+        "required": true
+      }
+    ]
+  }
+}
