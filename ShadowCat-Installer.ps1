@@ -1,10 +1,10 @@
 # ==============================================================================
-# Project ShadowCat - Enhanced Modular Security Toolkit
+# Project ShadowCat - Modular Security Toolkit
 # Advanced installer with dependency management and overlap prevention
 # ==============================================================================
-#
-# Author: Project BlackCat Team
-# Version: 2.0.0
+# 
+# Author: Project ShadowCat Team
+# Version: 2.1.0
 # License: MIT License
 # ==============================================================================
 
@@ -15,587 +15,82 @@ param(
     [string]$InstallLevel = "standard",
     [switch]$SkipSystemConfig,
     [switch]$SkipPowershellProfile,
-    [switch]$Verbose = $true,
+    [switch]$Verbose,
     [switch]$ShowAvailableConfigs,
     [switch]$DryRun,
     [switch]$ShowDependencies,
-    [switch]$Online = $true
+    [switch]$Online
 )
 
-# Global variables for tracking
-$Global:ToolCategories = @{}
-$Global:ProcessedConfigs = @{}
-$Global:InstalledTools = @{}
-$Global:SkippedTools = @{}
-$Global:DependencyChain = @()
+# Script-scoped variables for tracking (used across modules)
+$script:PSScriptRoot = $PSScriptRoot
+$script:InstallLevel = $InstallLevel
+$script:DryRun = $DryRun
+$script:Verbose = $Verbose
+$script:Online = $Online
+$script:ToolCategories = @{}
+$script:ProcessedConfigs = @{}
+$script:InstalledTools = @{}
+$script:SkippedTools = @{}
+$script:DependencyChain = @()
+$script:IsIEXMode = ($null -eq $PSScriptRoot -or $PSScriptRoot -eq '')
 
-# ShadowCat ASCII Art Banner
-function Show-ShadowCatBanner {
-    $banner = @"
-
-
-    _____ _      /\_/\    _                _____      _
-   / ____| |    ( o.o )  | |              / ____|    | |
-  | (___ | |__   > ^ < __| | _____      _| |     ____| |_     /\_/\
-   \___ \| '_ \ / _`  |/ _`  |/ _ \ \ /\ / / |    / _`  | __|   ( o.o )
-   ____) | | | | (_| | (_| | (_) \ V  V /| |___| (_| | |_     > ^ <
-  |_____/|_| |_|\__,_|\__,_|\___/ \_/\_/  \_____\__,_|\__|
-
-"@
-    Write-Host $banner -ForegroundColor Blue
-    Write-Host "    [+] Install Level: $InstallLevel" -ForegroundColor Yellow
-    Write-Host "    [+] Dependency Resolution: Enabled" -ForegroundColor Yellow
-    Write-Host "    [+] Overlap Prevention: Active" -ForegroundColor Yellow
-    Write-Host "    [+] Project ShadowCat - Elite Security Solutions" -ForegroundColor Yellow
-    Write-Host ""
+# Identify execution context - local script or IEX
+if ($script:IsIEXMode) {
+    # Running via IEX - need to handle modules differently
+    Write-Host "Detected execution via Invoke-Expression (IEX)" -ForegroundColor Yellow
+    $script:PSScriptRoot = [System.IO.Path]::GetTempPath()
 }
 
-# logging
-function Write-ShadowCatLog {
-    param(
-        [string]$Message,
-        [ValidateSet("Info", "Success", "Warning", "Error", "Header", "Debug", "Dependency")]
-        [string]$Level = "Info"
-    )
+# Import modules
+Write-Host "Loading ShadowCat modules..." -ForegroundColor Cyan
+$modulesPath = Join-Path $script:PSScriptRoot "modules"
+$moduleFiles = @(
+    "ShadowCat-UI.ps1",
+    "ShadowCat-Config.ps1", 
+    "ShadowCat-PackageManagers.ps1",
+    "ShadowCat-CustomTools.ps1"
+)
 
-    $timestamp = Get-Date -Format "HH:mm:ss"
-    $prefix = switch ($Level) {
-        "Info"       { "[ShadowCat] [INFO]" }
-        "Success"    { "[ShadowCat] [✓]" }
-        "Warning"    { "[ShadowCat] [⚠]" }
-        "Error"      { "[ShadowCat] [✗]" }
-        "Header"     { "[ShadowCat] [>>>]" }
-        "Debug"      { "[ShadowCat] [DBG]" }
-        "Dependency" { "[ShadowCat] [DEP]" }
-    }
-
-    $color = switch ($Level) {
-        "Info"       { "White" }
-        "Success"    { "Green" }
-        "Warning"    { "Yellow" }
-        "Error"      { "Red" }
-        "Header"     { "Cyan" }
-        "Debug"      { "Gray" }
-        "Dependency" { "Magenta" }
-    }
-
-    if ($Level -eq "Debug" -and -not $Verbose) { return }
-
-    Write-Host "$timestamp $prefix $Message" -ForegroundColor $color
+# Create modules directory if needed (for IEX mode)
+if ($script:IsIEXMode -and -not (Test-Path $modulesPath)) {
+    New-Item -Path $modulesPath -ItemType Directory -Force | Out-Null
+    Write-Host "  [*] Created temporary modules directory: $modulesPath" -ForegroundColor Yellow
 }
 
-# Load configuration with enhanced validation
-function Import-ShadowCatConfig {
-    param([string]$ConfigPath)
+# Base URL for downloading modules
+$moduleBaseUrl = "https://raw.githubusercontent.com/azurekid/shadowcat/main/modules"
 
-
-    $fullPath = $ConfigPath
-    $configContent = $null
-
-    if ($Online) {
-        # Download config from GitHub main branch
-        $repoUrl = "https://raw.githubusercontent.com/azurekid/shadowcat/main/configs/$ConfigPath"
-        Write-ShadowCatLog "Downloading config from GitHub: $repoUrl" -Level "Info"
+# Dot-source each module file
+foreach ($moduleFile in $moduleFiles) {
+    $modulePath = Join-Path $modulesPath $moduleFile
+    
+    # For IEX mode, download the module if it doesn't exist
+    if ($script:IsIEXMode -and -not (Test-Path $modulePath)) {
+        $moduleUrl = "$moduleBaseUrl/$moduleFile"
         try {
-            $configContent = Invoke-WebRequest -Uri $repoUrl -UseBasicParsing | Select-Object -ExpandProperty Content
-        } catch {
-            Write-ShadowCatLog "Failed to download config: $($_.Exception.Message)" -Level "Error"
-            return $null
-        }
-        # Use just the filename as the key for processed configs in online mode
-        $fullPath = $ConfigPath
-    } else {
-        if (-not [System.IO.Path]::IsPathRooted($ConfigPath)) {
-            $fullPath = Join-Path (Join-Path $PSScriptRoot "configs") $ConfigPath
-        }
-        if (-not (Test-Path $fullPath)) {
-            Write-ShadowCatLog "Configuration file not found: $ConfigPath" -Level "Error"
-            return $null
-        }
-        $configContent = Get-Content $fullPath -Raw
-    }
-
-    # Check if already processed
-    if ($Global:ProcessedConfigs.ContainsKey($fullPath)) {
-        Write-ShadowCatLog "Configuration already processed: $ConfigPath" -Level "Debug"
-        return $Global:ProcessedConfigs[$fullPath]
-    }
-
-    try {
-        $config = $configContent | ConvertFrom-Json
-
-        # Enhanced validation
-        if (-not $config.metadata) {
-            Write-ShadowCatLog "Invalid configuration - missing metadata: $ConfigPath" -Level "Error"
-            return $null
-        }
-
-        # Add to processed configs
-        $Global:ProcessedConfigs[$fullPath] = $config
-
-        Write-ShadowCatLog "Loaded configuration: $($config.metadata.name)" -Level "Success"
-        Write-ShadowCatLog "Install Level: $($config.metadata.installLevel) | Dependencies: $($config.metadata.dependencies.Count)" -Level "Debug"
-
-        return $config
-    }
-    catch {
-        Write-ShadowCatLog "Failed to parse configuration file: $($_.Exception.Message)" -Level "Error"
-        return $null
-    }
-}
-
-# Resolve configuration dependencies
-function Resolve-ConfigDependencies {
-    param([string[]]$ConfigFiles)
-
-    Write-ShadowCatLog "Resolving configuration dependencies..." -Level "Header"
-
-    $resolvedConfigs = @()
-    $processingQueue = [System.Collections.Queue]::new()
-
-    # Add initial configs to queue
-    foreach ($configFile in $ConfigFiles) {
-        $processingQueue.Enqueue($configFile)
-    }
-
-    while ($processingQueue.Count -gt 0) {
-        $currentConfig = $processingQueue.Dequeue()
-
-        # Skip if already resolved
-        if ($currentConfig -in $resolvedConfigs) {
-            continue
-        }
-
-        Write-ShadowCatLog "Processing dependencies for: $currentConfig" -Level "Dependency"
-
-        $config = Import-ShadowCatConfig -ConfigPath $currentConfig
-        if ($null -eq $config) {
-            Write-ShadowCatLog "Skipping invalid configuration: $currentConfig" -Level "Warning"
-            continue
-        }
-
-        # Check install level compatibility
-        if ($config.metadata.installLevel) {
-            $configLevel = $config.metadata.installLevel
-            $isCompatible = switch ($InstallLevel) {
-                "lite" { $configLevel -eq "lite" }
-                "standard" { $configLevel -in @("lite", "standard") }
-                "professional" { $configLevel -in @("lite", "standard", "professional") }
-                "all" { $true }
-                default { $true }
-            }
-
-            if (-not $isCompatible) {
-                Write-ShadowCatLog "Skipping $currentConfig - install level $configLevel not compatible with $InstallLevel" -Level "Warning"
-                continue
-            }
-        }
-
-        # Process dependencies first
-        if ($config.metadata.dependencies) {
-            foreach ($dependency in $config.metadata.dependencies) {
-                if ($dependency -notin $resolvedConfigs) {
-                    Write-ShadowCatLog "Adding dependency: $dependency" -Level "Dependency"
-                    $processingQueue.Enqueue($dependency)
-                }
-            }
-        }
-
-        # Add current config to resolved list
-        $resolvedConfigs += $currentConfig
-        $Global:DependencyChain += $currentConfig
-    }
-
-    Write-ShadowCatLog "Dependency resolution complete. Processing order:" -Level "Success"
-    foreach ($config in $resolvedConfigs) {
-        Write-ShadowCatLog "  → $config" -Level "Info"
-    }
-
-    return $resolvedConfigs
-}
-
-# Check if tool should be installed based on level and duplicates
-function Test-ToolInstallation {
-    param($tool, $source)
-
-    # Check if tool has a unique ID
-    $toolId = if ($tool.toolId) { $tool.toolId } else { $tool.name }
-
-    # Check install level compatibility
-    if ($tool.installLevel) {
-        $toolLevel = $tool.installLevel
-        $isCompatible = switch ($InstallLevel) {
-            "lite" { $toolLevel -eq "lite" }
-            "standard" { $toolLevel -in @("lite", "standard") }
-            "professional" { $toolLevel -in @("lite", "standard", "professional") }
-            "all" { $true }
-            default { $true }
-        }
-
-        if (-not $isCompatible) {
-            Write-ShadowCatLog "Skipping $($tool.name) - level $toolLevel not compatible with $InstallLevel" -Level "Debug"
-            return $false
-        }
-    }
-
-    # Track tool category for folder organization
-    if ($tool.category) {
-        $Global:ToolCategories[$toolId] = $tool.category
-    }
-    # Check for duplicates
-    if ($Global:InstalledTools.ContainsKey($toolId)) {
-        $existingSource = $Global:InstalledTools[$toolId]
-        Write-ShadowCatLog "Tool $($tool.name) already installed from $existingSource (ID: $toolId)" -Level "Warning"
-        $Global:SkippedTools[$toolId] = @{
-            name = $tool.name
-            source = $source
-            reason = "Duplicate - already installed from $existingSource"
-        }
-        return $false
-    }
-
-    return $true
-}
-
-function Install-ChocolateyPackages {
-    param($packages, $configName)
-    
-    if (-not $packages -or $packages.Count -eq 0) { return }
-    
-    Write-ShadowCatLog "Processing Chocolatey packages from $configName..." -Level "Header"
-    
-    if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
-        Write-ShadowCatLog "Installing Chocolatey package manager..." -Level "Info"
-        if (-not $DryRun) {
-            Set-ExecutionPolicy Bypass -Scope Process -Force
-            [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-            Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-        }
-    }
-    
-    $installedCount = 0
-    $skippedCount = 0
-    
-    foreach ($package in $packages) {
-        $toolId = if ($package.toolId) { $package.toolId } else { $package.name }
-        
-        if (-not (Test-ToolInstallation -tool $package -source "Chocolatey")) {
-            $skippedCount++
-            continue
-        }
-        
-        try {
-            Write-ShadowCatLog "Installing $($package.name) - $($package.description)" -Level "Info"
-            
-            if (-not $DryRun) {
-                # Check if package is already installed
-                $chocoList = choco list --local-only $($package.name) -r
-                $isInstalled = $chocoList -match "^$($package.name)\|"
-                
-                if ($isInstalled) {
-                    Write-ShadowCatLog "$($package.name) is already installed, skipping." -Level "Info"
-                } else {
-                    # First check if package exists in repository
-                    $searchResult = choco search $($package.name) --exact -r
-                    if (-not $searchResult) {
-                        # Package not found in default repository
-                        Write-ShadowCatLog "Package $($package.name) not found in default Chocolatey repository." -Level "Warning"
-                        
-                        # Handle specific package alternatives
-                        switch ($package.name) {
-                            "john" {
-                                Write-ShadowCatLog "Trying alternative: john-jumbo instead of john" -Level "Info"
-                                $installCmd = "choco install john-jumbo -y"
-                            }
-                            "netcat" {
-                                Write-ShadowCatLog "Trying alternative: netcat-win32 instead of netcat" -Level "Info"
-                                $installCmd = "choco install netcat-win32 -y"
-                            }
-                            default {
-                                Write-ShadowCatLog "Skipping installation of $($package.name) - package not found." -Level "Warning"
-                                $Global:SkippedTools[$toolId] = @{
-                                    name = $package.name
-                                    source = $source
-                                    reason = "Package not found in repository"
-                                }
-                                continue
-                            }
-                        }
-                    } else {
-                        $installCmd = "choco install $($package.name) -y"
-                        if ($package.arguments) {
-                            $installCmd += " $($package.arguments)"
-                        }
-                    }
-                    
-                    # Execute the install command
-                    try {
-                        $output = Invoke-Expression $installCmd
-                        
-                        # Check if installation was successful
-                        if ($output -match "0/\d+ packages failed" -or $output -match "installed 1/1") {
-                            Write-ShadowCatLog "$($package.name) installed successfully." -Level "Success"
-                        } else {
-                            Write-ShadowCatLog "Installation of $($package.name) may have failed. Check logs for details." -Level "Warning"
-                        }
-                    } catch {
-                        Write-ShadowCatLog "Error during installation of $($package.name): $($_.Exception.Message)" -Level "Error"
-                    }
-                }
-            } else {
-                Write-ShadowCatLog "[DRY RUN] Would install: $installCmd" -Level "Debug"
-            }
-            
-            $Global:InstalledTools[$toolId] = "Chocolatey"
-            $installedCount++
-            Write-ShadowCatLog "Successfully processed $($package.name)" -Level "Success"
+            Write-Host "  [*] Downloading module: $moduleFile" -ForegroundColor Yellow
+            $moduleContent = Invoke-WebRequest -Uri $moduleUrl -UseBasicParsing | Select-Object -ExpandProperty Content
+            Set-Content -Path $modulePath -Value $moduleContent -Force
+            Write-Host "  [✓] Downloaded module: $moduleFile" -ForegroundColor Green
         }
         catch {
-            Write-ShadowCatLog "Failed to install $($package.name): $($_.Exception.Message)" -Level "Error"
-        }
-    }    Write-ShadowCatLog "Chocolatey summary: $installedCount installed, $skippedCount skipped" -Level "Info"
-}
-
-# Scoop installation
-function Install-ScoopPackages {
-    param($scoopConfig, $configName)
-    
-    if (-not $scoopConfig -or $scoopConfig.packages.Count -eq 0) { return }
-    
-    Write-ShadowCatLog "Processing Scoop packages from $configName..." -Level "Header"
-    
-    # Ensure Scoop is installed
-    if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
-        Write-ShadowCatLog "Installing Scoop package manager..." -Level "Info"
-        if (-not $DryRun) {
-            try {
-                # Check if running as admin
-                $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-                
-                # Set environment variables regardless of admin status
-                $env:SCOOP = Join-Path $env:USERPROFILE "scoop"
-                [environment]::setEnvironmentVariable('SCOOP', $env:SCOOP, 'User')
-                
-                if ($isAdmin) {
-                    Write-ShadowCatLog "Running as admin. Using special Scoop installation method..." -Level "Warning"
-                    
-                    # Special handling for admin installation
-                    $env:SCOOP_GLOBAL = "C:\ProgramData\scoop"
-                    [environment]::setEnvironmentVariable('SCOOP_GLOBAL', $env:SCOOP_GLOBAL, 'Machine')
-                    
-                    # Use the iex installer that supports admin mode
-                    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-                    irm -useb get.scoop.sh | iex
-                }
-                else {
-                    # Standard non-admin installation
-                    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-                    Invoke-RestMethod -Uri 'https://get.scoop.sh' | Invoke-Expression
-                }
-                
-                # Add the app directory to PATH to ensure scoop commands work immediately
-                $env:PATH = "$env:SCOOP\shims;$env:PATH"
-            }
-            catch {
-                Write-ShadowCatLog "Failed to install Scoop: $($_.Exception.Message)" -Level "Error"
-                Write-ShadowCatLog "You may need to install Scoop manually. Visit https://scoop.sh for instructions." -Level "Warning"
-            }
+            Write-Host "  [✗] Failed to download module: $moduleFile" -ForegroundColor Red
+            Write-Host "      $($_.Exception.Message)" -ForegroundColor Red
+            exit 1
         }
     }
     
-    # Add required buckets
-    if ($scoopConfig.buckets -and -not $DryRun) {
-        foreach ($bucket in $scoopConfig.buckets) {
-            try {
-                Write-ShadowCatLog "Adding Scoop bucket: $bucket" -Level "Debug"
-                scoop bucket add $bucket 2>$null
-            }
-            catch {
-                Write-ShadowCatLog "Warning: Could not add bucket $bucket" -Level "Warning"
-            }
-        }
-    }    $installedCount = 0
-    $skippedCount = 0
-
-    foreach ($package in $scoopConfig.packages) {
-        $toolId = if ($package.toolId) { $package.toolId } else { $package.name }
-
-        if (-not (Test-ToolInstallation -tool $package -source "Scoop")) {
-            $skippedCount++
-            continue
-        }
-
-        try {
-            Write-ShadowCatLog "Installing $($package.name) - $($package.description)" -Level "Info"
-
-            if (-not $DryRun) {
-                scoop install $package.name
-            } else {
-                Write-ShadowCatLog "[DRY RUN] Would install: scoop install $($package.name)" -Level "Debug"
-            }
-
-            $Global:InstalledTools[$toolId] = "Scoop"
-            $installedCount++
-            Write-ShadowCatLog "Successfully processed $($package.name)" -Level "Success"
-        }
-        catch {
-            Write-ShadowCatLog "Failed to install $($package.name): $($_.Exception.Message)" -Level "Error"
-        }
+    # Now dot-source the module (whether local or downloaded)
+    if (Test-Path $modulePath) {
+        . $modulePath
+        Write-Host "  [✓] Loaded module: $moduleFile" -ForegroundColor Green
+    } 
+    else {
+        Write-Host "  [✗] Module not found: $moduleFile" -ForegroundColor Red
+        Write-Host "      Please ensure all module files exist in: $modulesPath" -ForegroundColor Yellow
+        exit 1
     }
-
-    Write-ShadowCatLog "Scoop summary: $installedCount installed, $skippedCount skipped" -Level "Info"
-}
-
-# GitHub projects installation
-function Install-GitHubProjects {
-    param($projects, $basePath, $configName)
-
-    if (-not $projects -or $projects.Count -eq 0) { return }
-
-    Write-ShadowCatLog "Processing GitHub projects from $configName..." -Level "Header"
-
-    $installedCount = 0
-    $skippedCount = 0
-
-    foreach ($project in $projects) {
-        $toolId = if ($project.toolId) { $project.toolId } else { $project.name }
-
-        if (-not (Test-ToolInstallation -tool $project -source "GitHub")) {
-            $skippedCount++
-            continue
-        }
-
-        try {
-            $destination = Join-Path $basePath $project.destination
-            Write-ShadowCatLog "Cloning $($project.name) - $($project.description)" -Level "Info"
-
-            if (-not $DryRun) {
-                if (Test-Path $destination) {
-                    Write-ShadowCatLog "Directory exists, pulling latest changes for $($project.name)" -Level "Debug"
-                    Push-Location $destination
-                    git pull
-                    Pop-Location
-                }
-                else {
-                    New-Item -Path (Split-Path $destination) -ItemType Directory -Force | Out-Null
-                    git clone $project.url $destination
-                }
-            } else {
-                Write-ShadowCatLog "[DRY RUN] Would clone: $($project.url) to $destination" -Level "Debug"
-            }
-
-            $Global:InstalledTools[$toolId] = "GitHub"
-            $installedCount++
-            Write-ShadowCatLog "Successfully processed $($project.name)" -Level "Success"
-        }
-        catch {
-            Write-ShadowCatLog "Failed to clone $($project.name): $($_.Exception.Message)" -Level "Error"
-        }
-    }
-
-    Write-ShadowCatLog "GitHub summary: $installedCount installed, $skippedCount skipped" -Level "Info"
-}
-
-# Python packages installation
-function Install-PythonPackages {
-    param($packages, $configName)
-
-    if (-not $packages -or $packages.Count -eq 0) { return }
-
-    Write-ShadowCatLog "Processing Python packages from $configName..." -Level "Header"
-
-    $installedCount = 0
-    $skippedCount = 0
-
-    foreach ($package in $packages) {
-        $toolId = if ($package.toolId) { $package.toolId } else { "python-$($package.name)" }
-
-        if (-not (Test-ToolInstallation -tool $package -source "Python pip")) {
-            $skippedCount++
-            continue
-        }
-
-        try {
-            Write-ShadowCatLog "Installing Python package: $($package.name) - $($package.description)" -Level "Info"
-
-            if (-not $DryRun) {
-                python -m pip install $package.name
-            } else {
-                Write-ShadowCatLog "[DRY RUN] Would install: python -m pip install $($package.name)" -Level "Debug"
-            }
-
-            $Global:InstalledTools[$toolId] = "Python pip"
-            $installedCount++
-            Write-ShadowCatLog "Successfully processed $($package.name)" -Level "Success"
-        }
-        catch {
-            Write-ShadowCatLog "Failed to install $($package.name): $($_.Exception.Message)" -Level "Error"
-        }
-    }
-
-    Write-ShadowCatLog "Python summary: $installedCount installed, $skippedCount skipped" -Level "Info"
-}
-
-# Show installation summary
-function New-ToolCategoryFolders {
-    param([string]$BasePath)
-    Write-ShadowCatLog "Creating categorized tool folders..." -Level "Header"
-    $categories = $Global:ToolCategories.Values | Select-Object -Unique
-    foreach ($cat in $categories) {
-        $catFolder = Join-Path $BasePath $cat
-        if (-not (Test-Path $catFolder)) {
-            New-Item -Path $catFolder -ItemType Directory -Force | Out-Null
-            Write-ShadowCatLog "Created folder: $catFolder" -Level "Success"
-        }
-    }
-}
-
-function Set-DesktopBackground {
-    param([string]$ImageUrl)
-    Write-ShadowCatLog "Setting custom desktop background..." -Level "Header"
-    $wallpaperPath = "$env:TEMP\shadowcat_wallpaper.jpg"
-    try {
-        Invoke-WebRequest -Uri $ImageUrl -OutFile $wallpaperPath -UseBasicParsing
-        # Set registry key for wallpaper
-        Set-ItemProperty -Path 'HKCU:\Control Panel\Desktop' -Name Wallpaper -Value $wallpaperPath
-        # Refresh desktop to apply wallpaper
-        rundll32.exe user32.dll,UpdatePerUserSystemParameters 1, True
-        Write-ShadowCatLog "Desktop background set successfully." -Level "Success"
-    } catch {
-        Write-ShadowCatLog "Failed to set desktop background: $($_.Exception.Message)" -Level "Error"
-    }
-}
-
-function Show-InstallationSummary {
-    Write-Host "`n╔═══════════════════════════════════════════════════════════════════════╗" -ForegroundColor Green
-    Write-Host "║                     Installation Summary                             ║" -ForegroundColor Green
-    Write-Host "╚═══════════════════════════════════════════════════════════════════════╝" -ForegroundColor Green
-
-    Write-Host "`n📊 STATISTICS:" -ForegroundColor Cyan
-    Write-Host "   Total Tools Installed: $($Global:InstalledTools.Count)" -ForegroundColor Green
-    Write-Host "   Tools Skipped (Duplicates): $($Global:SkippedTools.Count)" -ForegroundColor Yellow
-    Write-Host "   Install Level: $InstallLevel" -ForegroundColor White
-
-    if ($Global:InstalledTools.Count -gt 0) {
-        Write-Host "`n🛠️  INSTALLED TOOLS BY SOURCE:" -ForegroundColor Cyan
-        $groupedTools = $Global:InstalledTools.GetEnumerator() | Group-Object Value
-        foreach ($group in $groupedTools) {
-            Write-Host "   $($group.Name): $($group.Count) tools" -ForegroundColor White
-        }
-    }
-
-    if ($Global:SkippedTools.Count -gt 0) {
-        Write-Host "`n⚠️  SKIPPED TOOLS:" -ForegroundColor Yellow
-        foreach ($skipped in $Global:SkippedTools.GetEnumerator()) {
-            Write-Host "   $($skipped.Value.name) - $($skipped.Value.reason)" -ForegroundColor Gray
-        }
-    }
-
-    Write-Host "`n🎯 NEXT STEPS:" -ForegroundColor Cyan
-    Write-Host "   1. Restart PowerShell to activate ShadowCat profile" -ForegroundColor White
-    Write-Host "   2. Use 'bcat' command to navigate to tools" -ForegroundColor White  
-    Write-Host "   3. Check tool-specific documentation for usage" -ForegroundColor White
-    Write-Host "`n   Happy Hacking with ShadowCat! 🐱‍💻`n" -ForegroundColor Yellow
 }
 
 # Main installation function
@@ -604,13 +99,19 @@ function Start-Installation {
 
     Show-ShadowCatBanner
 
+    # Always use online mode for IEX installations
+    if ($script:IsIEXMode) {
+        Write-ShadowCatLog "Running in IEX mode - using online configuration" -Level "Info"
+        $script:Online = $true
+    }
+
     if ($ShowDependencies) {
         Write-ShadowCatLog "Dependency analysis mode - showing configuration dependencies" -Level "Info"
         $resolvedConfigs = Resolve-ConfigDependencies -ConfigFiles $ConfigFiles
         return
     }
 
-    if ($Online -and $ConfigFiles.Count -eq 0) {
+    if ($script:Online -and $ConfigFiles.Count -eq 0) {
         Write-ShadowCatLog "No config files specified. Fetching all configs with installLevel 'standard' from GitHub..." -Level "Info"
         $configsApiUrl = "https://api.github.com/repos/azurekid/shadowcat/contents/configs"
         try {
@@ -636,15 +137,17 @@ function Start-Installation {
             Write-ShadowCatLog "Failed to fetch configs from GitHub: $($_.Exception.Message)" -Level "Error"
             return
         }
-    } elseif ($ConfigFiles.Count -eq 0) {
+    } elseif ($ConfigFiles.Count -eq 0 -and -not $script:IsIEXMode) {
+        # Only show this warning for non-IEX mode
         Write-ShadowCatLog "No configuration files specified. Use -ShowAvailableConfigs to see options." -Level "Warning"
         return
     }
 
     Write-ShadowCatLog "Starting ShadowCat Installation..." -Level "Header"
-    Write-ShadowCatLog "Install Level: $InstallLevel" -Level "Info"
+    Write-ShadowCatLog "Install Level: $script:InstallLevel" -Level "Info"
     Write-ShadowCatLog "Install Path: $InstallPath" -Level "Info"
-    Write-ShadowCatLog "Dry Run Mode: $DryRun" -Level "Info"
+    Write-ShadowCatLog "Dry Run Mode: $script:DryRun" -Level "Info"
+    Write-ShadowCatLog "Online Mode: $script:Online" -Level "Info"
 
     # Resolve dependencies
     $resolvedConfigs = Resolve-ConfigDependencies -ConfigFiles $ConfigFiles
@@ -657,15 +160,15 @@ function Start-Installation {
     # Process each configuration in dependency order
     foreach ($configFile in $resolvedConfigs) {
         $config = $null
-        if ($Online) {
+        if ($script:Online) {
             # Use just the filename as the key for processed configs in online mode
-            if ($Global:ProcessedConfigs.ContainsKey($configFile)) {
-                $config = $Global:ProcessedConfigs[$configFile]
+            if ($script:ProcessedConfigs.ContainsKey($configFile)) {
+                $config = $script:ProcessedConfigs[$configFile]
             }
         } else {
-            $localKey = Join-Path (Join-Path $PSScriptRoot "configs") $configFile
-            if ($Global:ProcessedConfigs.ContainsKey($localKey)) {
-                $config = $Global:ProcessedConfigs[$localKey]
+            $localKey = Join-Path (Join-Path $script:PSScriptRoot "configs") $configFile
+            if ($script:ProcessedConfigs.ContainsKey($localKey)) {
+                $config = $script:ProcessedConfigs[$localKey]
             }
         }
 
@@ -704,7 +207,30 @@ function Start-Installation {
 
 # Handle command line arguments
 if ($ShowAvailableConfigs) {
-    # Use the existing function from the original script
+    # Display available configurations
+    Write-Host "`nAvailable Configuration Files:" -ForegroundColor Cyan
+    $configPath = Join-Path $PSScriptRoot "configs"
+    if (Test-Path $configPath) {
+        $configs = Get-ChildItem -Path $configPath -Filter "*.json"
+        foreach ($config in $configs) {
+            try {
+                $content = Get-Content $config.FullName -Raw | ConvertFrom-Json
+                $level = if ($content.metadata.installLevel) { $content.metadata.installLevel } else { "any" }
+                $name = if ($content.metadata.name) { $content.metadata.name } else { $config.BaseName }
+                $desc = if ($content.metadata.description) { $content.metadata.description } else { "No description" }
+                
+                Write-Host "  [$level] $($config.Name)" -NoNewline -ForegroundColor Yellow
+                Write-Host " - $name : $desc" -ForegroundColor White
+            }
+            catch {
+                Write-Host "  [ERROR] $($config.Name) - Invalid JSON format" -ForegroundColor Red
+            }
+        }
+    } else {
+        Write-Host "  No local configs found at $configPath" -ForegroundColor Yellow
+        Write-Host "  Online configs can be used with -Online switch" -ForegroundColor Cyan
+    }
+    Write-Host ""
     exit 0
 }
 
