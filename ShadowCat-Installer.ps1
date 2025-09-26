@@ -32,8 +32,6 @@ $Global:DependencyChain = @()
 function Show-ShadowCatBanner {
     $banner = @"
 
-    Write-Host @"
-
 
     _____ _      /\_/\    _                _____      _
    / ____| |    ( o.o )  | |              / ____|    | |
@@ -47,13 +45,8 @@ function Show-ShadowCatBanner {
                           > ^ <
                           (   )~
 
-╔═══════════════════════════════════════════════════════════════════════╗
-║                   Enhanced Security Toolkit v2.0.0                    ║
-║                    Professional Multi-Level Edition                   ║
-╚═══════════════════════════════════════════════════════════════════════╝
-
 "@
-    Write-Host $banner -ForegroundColor Red
+    Write-Host $banner -ForegroundColor Blue
     Write-Host "    [+] Install Level: $InstallLevel" -ForegroundColor Yellow
     Write-Host "    [+] Dependency Resolution: Enabled" -ForegroundColor Yellow
     Write-Host "    [+] Overlap Prevention: Active" -ForegroundColor Yellow
@@ -510,7 +503,33 @@ function Start-Installation {
         return
     }
 
-    if ($ConfigFiles.Count -eq 0) {
+    if ($Online -and $ConfigFiles.Count -eq 0) {
+        Write-ShadowCatLog "No config files specified. Fetching all configs with installLevel 'standard' from GitHub..." -Level "Info"
+        $configsApiUrl = "https://api.github.com/repos/azurekid/shadowcat/contents/configs"
+        try {
+            $configsList = Invoke-WebRequest -Uri $configsApiUrl -UseBasicParsing | ConvertFrom-Json
+            $standardConfigs = @()
+            foreach ($item in $configsList) {
+                if ($item.name -like "*.json") {
+                    $rawUrl = $item.download_url
+                    $configContent = Invoke-WebRequest -Uri $rawUrl -UseBasicParsing | Select-Object -ExpandProperty Content
+                    $configJson = $configContent | ConvertFrom-Json
+                    if ($configJson.metadata.installLevel -eq "standard") {
+                        $standardConfigs += $item.name
+                    }
+                }
+            }
+            if ($standardConfigs.Count -eq 0) {
+                Write-ShadowCatLog "No configs with installLevel 'standard' found online." -Level "Error"
+                return
+            }
+            Write-ShadowCatLog "Using configs: $($standardConfigs -join ', ')" -Level "Success"
+            $ConfigFiles = $standardConfigs
+        } catch {
+            Write-ShadowCatLog "Failed to fetch configs from GitHub: $($_.Exception.Message)" -Level "Error"
+            return
+        }
+    } elseif ($ConfigFiles.Count -eq 0) {
         Write-ShadowCatLog "No configuration files specified. Use -ShowAvailableConfigs to see options." -Level "Warning"
         return
     }
