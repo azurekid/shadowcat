@@ -15,7 +15,7 @@ param(
     [string]$InstallLevel = "standard",
     [switch]$SkipSystemConfig,
     [switch]$SkipPowershellProfile,
-    [switch]$Verbose,
+    [switch]$Verbose = $true,
     [switch]$ShowAvailableConfigs,
     [switch]$DryRun,
     [switch]$ShowDependencies,
@@ -92,6 +92,7 @@ function Write-ShadowCatLog {
 function Import-ShadowCatConfig {
     param([string]$ConfigPath)
 
+
     $fullPath = $ConfigPath
     $configContent = $null
 
@@ -105,6 +106,8 @@ function Import-ShadowCatConfig {
             Write-ShadowCatLog "Failed to download config: $($_.Exception.Message)" -Level "Error"
             return $null
         }
+        # Use just the filename as the key for processed configs in online mode
+        $fullPath = $ConfigPath
     } else {
         if (-not [System.IO.Path]::IsPathRooted($ConfigPath)) {
             $fullPath = Join-Path (Join-Path $PSScriptRoot "configs") $ConfigPath
@@ -549,7 +552,18 @@ function Start-Installation {
 
     # Process each configuration in dependency order
     foreach ($configFile in $resolvedConfigs) {
-        $config = $Global:ProcessedConfigs[(Join-Path (Join-Path $PSScriptRoot "configs") $configFile)]
+        $config = $null
+        if ($Online) {
+            # Use just the filename as the key for processed configs in online mode
+            if ($Global:ProcessedConfigs.ContainsKey($configFile)) {
+                $config = $Global:ProcessedConfigs[$configFile]
+            }
+        } else {
+            $localKey = Join-Path (Join-Path $PSScriptRoot "configs") $configFile
+            if ($Global:ProcessedConfigs.ContainsKey($localKey)) {
+                $config = $Global:ProcessedConfigs[$localKey]
+            }
+        }
 
         if ($null -eq $config) { continue }
 
