@@ -174,6 +174,108 @@ function New-ToolDashboard {
     
     Write-ShadowCatLog "Generating HTML tool dashboard..." -Level "Header"
     
+    # Create a comprehensive tool documentation mapping
+    $toolDocumentationMap = @{
+        # Network Tools
+        "nmap" = "https://nmap.org/docs.html"
+        "wireshark" = "https://www.wireshark.org/docs/"
+        "putty" = "https://www.chiark.greenend.org.uk/~sgtatham/putty/docs.html"
+        "ncat" = "https://nmap.org/ncat/guide/"
+        "masscan" = "https://github.com/robertdavidgraham/masscan"
+        "zmap" = "https://zmap.io/documentation.html"
+        
+        # Web Testing Tools
+        "zap" = "https://www.zaproxy.org/docs/"
+        "burpsuite-free" = "https://portswigger.net/burp/documentation"
+        "nikto" = "https://github.com/sullo/nikto/wiki"
+        "ffuf" = "https://github.com/ffuf/ffuf"
+        "wfuzz" = "https://wfuzz.readthedocs.io/"
+        "dirsearch" = "https://github.com/maurosoria/dirsearch"
+        "sublist3r" = "https://github.com/aboul3la/Sublist3r"
+        "whatweb" = "https://github.com/urbanadventurer/WhatWeb"
+        "wpscan" = "https://wpscan.com/documentation/"
+        "gobuster" = "https://github.com/OJ/gobuster"
+        
+        # Password/Hash Tools
+        "hashcat" = "https://hashcat.net/wiki/"
+        "john" = "https://www.openwall.com/john/doc/"
+        "hydra" = "https://github.com/vanhauser-thc/thc-hydra"
+        
+        # Exploitation Tools
+        "metasploit" = "https://docs.rapid7.com/metasploit/"
+        "sqlmap" = "https://sqlmap.org/doc/"
+        "mimikatz" = "https://github.com/gentilkiwi/mimikatz/wiki"
+        "powersploit" = "https://github.com/PowerShellMafia/PowerSploit"
+        "responder" = "https://github.com/lgandx/Responder"
+        "bloodhound" = "https://bloodhound.readthedocs.io/"
+        "crackmapexec" = "https://www.crackmapexec.wiki/"
+        "impacket" = "https://github.com/SecureAuthCorp/impacket"
+        
+        # Reverse Engineering
+        "ida-free" = "https://hex-rays.com/ida-free/"
+        "ghidra" = "https://ghidra-sre.org/CheatSheet.html"
+        "radare2" = "https://book.rada.re/"
+        "binary-ninja" = "https://docs.binary.ninja/"
+        "x64dbg" = "https://x64dbg.readthedocs.io/"
+        
+        # OSINT Tools
+        "recon-ng" = "https://github.com/lanmaster53/recon-ng/wiki"
+        "holehe" = "https://github.com/megadose/holehe"
+        "twint" = "https://github.com/twintproject/twint"
+        "shodan-cli" = "https://cli.shodan.io/"
+        "theHarvester" = "https://github.com/laramies/theHarvester"
+        "maltego" = "https://docs.maltego.com/"
+        "osrframework" = "https://github.com/i3visio/osrframework"
+        "spiderfoot" = "https://www.spiderfoot.net/documentation/"
+        
+        # Mobile Security
+        "adb" = "https://developer.android.com/studio/command-line/adb"
+        "scrcpy" = "https://github.com/Genymobile/scrcpy"
+        "apktool" = "https://ibotpeaches.github.io/Apktool/"
+        "jadx" = "https://github.com/skylot/jadx"
+        "frida" = "https://frida.re/docs/"
+        
+        # Forensics Tools
+        "volatility" = "https://volatilityfoundation.org/documentation/"
+        "autopsy" = "https://www.autopsy.com/documentation/"
+        "sleuthkit" = "https://www.sleuthkit.org/sleuthkit/docs.php"
+        "exiftool" = "https://exiftool.org/documentation.html"
+        "binwalk" = "https://github.com/ReFirmLabs/binwalk"
+        "regripper" = "https://github.com/keydet89/RegRipper3.0"
+        "rekall" = "http://www.rekall-forensic.com/documentation-1"
+        "bulk_extractor" = "https://github.com/simsong/bulk_extractor"
+        
+        # Development Tools
+        "git" = "https://git-scm.com/docs"
+        "python3" = "https://docs.python.org/3/"
+        "golang" = "https://golang.org/doc/"
+        "nodejs" = "https://nodejs.org/en/docs/"
+        "7zip" = "https://www.7-zip.org/faq.html"
+        
+        # Infrastructure
+        "docker-desktop" = "https://docs.docker.com/"
+        "virtualbox" = "https://www.virtualbox.org/wiki/Documentation"
+        "vmware-workstation" = "https://docs.vmware.com/en/VMware-Workstation-Pro/"
+        "vagrant" = "https://www.vagrantup.com/docs"
+        
+        # Network Utilities
+        "curl" = "https://curl.se/docs/"
+        "wget" = "https://www.gnu.org/software/wget/manual/"
+        "remmina" = "https://remmina.org/how-to/"
+        
+        # C2 Frameworks
+        "empire" = "https://bc-security.gitbook.io/empire-wiki/"
+        "covenant" = "https://github.com/cobbr/Covenant/wiki"
+        "cobalt-strike" = "https://www.cobaltstrike.com/help"
+        "sliver" = "https://sliver.sh/docs"
+        
+        # Python Libraries
+        "python-nmap" = "https://python-nmap.readthedocs.io/"
+        "requests" = "https://requests.readthedocs.io/"
+        "scapy" = "https://scapy.readthedocs.io/"
+        "pwntools" = "https://docs.pwntools.com/"
+    }
+    
     # Create Reports directory if it doesn't exist
     $reportsPath = Join-Path $InstallPath "Reports"
     if (-not (Test-Path $reportsPath)) {
@@ -216,7 +318,7 @@ function New-ToolDashboard {
                     Description = $tool.description
                     Category = $tool.category
                     PackageManager = "Chocolatey"
-                    Level = $tool.installLevel
+                    Level = if ($tool.installLevel) { $tool.installLevel } else { $config.metadata.installLevel }
                     Required = $tool.required
                     ToolId = $tool.toolId
                 }
@@ -230,7 +332,7 @@ function New-ToolDashboard {
                     Description = $tool.description
                     Category = $tool.category
                     PackageManager = "Scoop"
-                    Level = $tool.installLevel
+                    Level = if ($tool.installLevel) { $tool.installLevel } else { $config.metadata.installLevel }
                     Required = $tool.required
                     ToolId = $tool.toolId
                 }
@@ -244,7 +346,7 @@ function New-ToolDashboard {
                     Description = $tool.description
                     Category = $tool.category
                     PackageManager = "Python"
-                    Level = $tool.installLevel
+                    Level = if ($tool.installLevel) { $tool.installLevel } else { $config.metadata.installLevel }
                     Required = $tool.required
                     ToolId = $tool.toolId
                 }
@@ -259,7 +361,7 @@ function New-ToolDashboard {
                     Description = $tool.description
                     Category = $tool.category
                     PackageManager = "GitHub"
-                    Level = $tool.installLevel
+                    Level = if ($tool.installLevel) { $tool.installLevel } else { $config.metadata.installLevel }
                     Required = $tool.required
                     ToolId = $tool.toolId
                     Url = $tool.url
@@ -441,6 +543,7 @@ function New-ToolDashboard {
         .level-lite { border-color: #4CAF50; color: #4CAF50; }
         .level-standard { border-color: #FF9800; color: #FF9800; }
         .level-professional { border-color: #9C27B0; color: #9C27B0; }
+        .level-core { border-color: #2196F3; color: #2196F3; }
         
         .config-summary {
             padding: 2rem;
@@ -469,6 +572,46 @@ function New-ToolDashboard {
         .config-item h3 {
             color: #EF0909;
             margin-bottom: 0.5rem;
+        }
+        
+        .tool-links {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .doc-link, .github-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(239, 9, 9, 0.1);
+            border: 1px solid rgba(239, 9, 9, 0.3);
+            border-radius: 20px;
+            color: #EF0909;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .doc-link:hover, .github-link:hover {
+            background: rgba(239, 9, 9, 0.2);
+            border-color: #EF0909;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 9, 9, 0.2);
+        }
+        
+        .doc-link {
+            border-color: rgba(76, 175, 80, 0.5);
+            color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+        
+        .doc-link:hover {
+            background: rgba(76, 175, 80, 0.2);
+            border-color: #4CAF50;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
         }
         
         .footer {
@@ -530,7 +673,33 @@ function New-ToolDashboard {
     foreach ($tool in $allTools) {
         $levelClass = "level-$($tool.Level)"
         $requiredBadge = if ($tool.Required -eq $true) { "Required" } else { "Optional" }
-        $githubLink = if ($tool.Url) { "<a href=`"$($tool.Url)`" target=`"_blank`" style=`"color: #EF0909; text-decoration: none;`">🔗 View on GitHub</a>" } else { "" }
+        
+        # Get documentation link for this tool
+        $docLink = ""
+        $toolName = $tool.Name -replace '^[^/]+/', ''  # Remove bucket prefix if present
+        if ($toolDocumentationMap.ContainsKey($toolName)) {
+            $docUrl = $toolDocumentationMap[$toolName]
+            $docLink = "<a href=`"$docUrl`" target=`"_blank`" class=`"doc-link`" title=`"View documentation for $toolName`">📚 Documentation</a>"
+        } elseif ($toolDocumentationMap.ContainsKey($tool.Name)) {
+            $docUrl = $toolDocumentationMap[$tool.Name]
+            $docLink = "<a href=`"$docUrl`" target=`"_blank`" class=`"doc-link`" title=`"View documentation for $($tool.Name)`">📚 Documentation</a>"
+        }
+        
+        # GitHub link for GitHub tools
+        $githubLink = ""
+        if ($tool.Url) { 
+            $githubLink = "<a href=`"$($tool.Url)`" target=`"_blank`" class=`"github-link`" title=`"View source on GitHub`">🔗 Source Code</a>" 
+        }
+        
+        # Combine links
+        $toolLinks = ""
+        if ($docLink -and $githubLink) {
+            $toolLinks = "<div class=`"tool-links`">$docLink $githubLink</div>"
+        } elseif ($docLink) {
+            $toolLinks = "<div class=`"tool-links`">$docLink</div>"
+        } elseif ($githubLink) {
+            $toolLinks = "<div class=`"tool-links`">$githubLink</div>"
+        }
         
         $htmlContent += @"
         <div class="tool-card" data-manager="$($tool.PackageManager)" data-category="$($tool.Category)" data-level="$($tool.Level)">
@@ -544,7 +713,7 @@ function New-ToolDashboard {
                 <span class="meta-tag $levelClass">$($tool.Level)</span>
                 <span class="meta-tag">$requiredBadge</span>
             </div>
-            $githubLink
+            $toolLinks
         </div>
 "@
     }
@@ -590,9 +759,17 @@ function New-ToolDashboard {
         
         filterButtons.forEach(btn => {
             btn.addEventListener('click', () => {
-                filterButtons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentFilter = btn.dataset.filter;
+                // Get all filter buttons (including dynamically added ones)
+                const allFilterButtons = document.querySelectorAll('.filter-btn');
+                // Toggle functionality: if clicking active button, deselect it
+                if (btn.classList.contains('active')) {
+                    allFilterButtons.forEach(b => b.classList.remove('active'));
+                    currentFilter = 'all';
+                } else {
+                    allFilterButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.filter;
+                }
                 filterTools();
             });
         });
@@ -630,9 +807,17 @@ function New-ToolDashboard {
             btn.textContent = category;
             btn.dataset.filter = category;
             btn.addEventListener('click', () => {
-                filterButtons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentFilter = category;
+                // Get all filter buttons (including dynamically added ones)
+                const allFilterButtons = document.querySelectorAll('.filter-btn');
+                // Toggle functionality: if clicking active button, deselect it
+                if (btn.classList.contains('active')) {
+                    allFilterButtons.forEach(b => b.classList.remove('active'));
+                    currentFilter = 'all';
+                } else {
+                    allFilterButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = category;
+                }
                 filterToolsByCategory();
             });
             document.querySelector('.filter-buttons').appendChild(btn);

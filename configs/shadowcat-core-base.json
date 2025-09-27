@@ -6,7 +6,7 @@
     "author": "Project BlackCat",
     "lastUpdated": "2024-09-26",
     "category": "Base",
-    "installLevel": "lite",
+    "installLevel": "core",
     "dependencies": []
   },
   "chocolatey": {
@@ -16,7 +16,7 @@
         "description": "Distributed version control system",
         "category": "Development",
         "required": true,
-        "installLevel": "lite",
+        "installLevel": "core",
         "toolId": "git",
         "arguments": ""
       },
@@ -25,7 +25,7 @@
         "description": "Python programming language",
         "category": "Runtime",
         "required": true,
-        "installLevel": "lite",
+        "installLevel": "core",
         "toolId": "python3",
         "arguments": ""
       },
@@ -34,7 +34,7 @@
         "description": "File archiver with high compression ratio", 
         "category": "Utilities",
         "required": true,
-        "installLevel": "lite",
+        "installLevel": "core",
         "toolId": "7zip",
         "arguments": ""
       },
@@ -57,7 +57,7 @@
         "description": "Command line tool for transferring data",
         "category": "Network Utilities",
         "required": true,
-        "installLevel": "lite", 
+        "installLevel": "core", 
         "toolId": "curl",
         "arguments": ""
       },
@@ -66,7 +66,7 @@
         "description": "Network downloader",
         "category": "Network Utilities",
         "required": true,
-        "installLevel": "lite",
+        "installLevel": "core",
         "toolId": "wget",
         "arguments": ""
       }
@@ -80,7 +80,7 @@
         "description": "Network execution toolkit for penetration testing (formerly CrackMapExec)",
         "category": "Network Exploitation",
         "destination": "NetworkScanning/NetExec",
-        "installLevel": "lite",
+        "installLevel": "core",
         "toolId": "netexec-github"
       }
     ]
@@ -92,7 +92,7 @@
         "description": "HTTP library for Python",
         "category": "HTTP Utilities",
         "required": true,
-        "installLevel": "lite",
+        "installLevel": "core",
         "toolId": "python-requests"
       }
     ]

@@ -43,6 +43,7 @@
         "description": "SSH and Telnet client",
         "category": "Remote Access",
         "required": true,
+        "installLevel": "standard",
         "arguments": ""
       },
       {
