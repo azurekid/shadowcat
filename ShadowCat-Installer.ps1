@@ -140,6 +140,10 @@ function Show-ConfigSelectionMenu {
         $index = 1
         
         foreach ($configFile in $configFiles) {
+            if ($configFile.Name -eq "shadowcat-core-base.json") {
+                continue
+            }
+            
             try {
                 $content = Get-Content $configFile.FullName -Raw | ConvertFrom-Json
                 $configLevel = if ($content.metadata.installLevel) { $content.metadata.installLevel } else { "any" }
@@ -306,6 +310,13 @@ function Start-Installation {
     Write-ShadowCatLog "Install Path: $InstallPath" -Level "Info"
     Write-ShadowCatLog "Dry Run Mode: $script:DryRun" -Level "Info"
     Write-ShadowCatLog "Online Mode: $script:Online" -Level "Info"
+
+    # Always ensure core base config is included
+    $coreBaseConfig = "shadowcat-core-base.json"
+    if ($ConfigFiles -notcontains $coreBaseConfig) {
+        Write-ShadowCatLog "Adding required core base configuration" -Level "Info"
+        $ConfigFiles += $coreBaseConfig
+    }
 
     # Resolve dependencies
     $resolvedConfigs = Resolve-ConfigDependencies -ConfigFiles $ConfigFiles
