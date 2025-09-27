@@ -107,6 +107,7 @@ Choose the profile that matches your needs and system capabilities:
 - **~5GB disk space**
 - **8GB+ RAM recommended**
 - Core reconnaissance and basic testing tools
+- Includes: `shadowcat-core-base` + lite toolset
 
 ### Standard Profile
 
@@ -115,6 +116,7 @@ Choose the profile that matches your needs and system capabilities:
 - **~25GB disk space**  
 - **12GB+ RAM recommended**
 - Comprehensive testing capabilities
+- Includes: Core + lite + standard toolsets
 
 ### Professional Profile
 
@@ -123,6 +125,7 @@ Choose the profile that matches your needs and system capabilities:
 - **~50GB disk space**
 - **16GB+ RAM recommended**
 - Full red team, forensics, and research capabilities
+- Includes: Core + lite + standard + professional toolsets
 
 ---
 
@@ -192,10 +195,10 @@ ShadowCat's power lies in its **modular JSON-based configuration system** that a
 - Shared dependencies (Python, Git, etc.) are centralized in base configurations
 
 #### ** Multi-Level Installation**
-- **Lite**: Essential tools only (`installLevel: "lite"`)
-- **Standard**: Balanced toolset (`installLevel: "standard"`) 
-- **Professional**: Complete arsenal (`installLevel: "professional"`)
-- **All**: Install everything regardless of level (`-InstallLevel all`)
+- **Lite**: Core base + lite toolset (`installLevel: "lite"`)
+- **Standard**: Core base + lite + standard toolsets (`installLevel: "standard"`)
+- **Professional**: Core base + lite + standard + professional toolsets (`installLevel: "professional"`)
+- **All**: Installs every available configuration (`-InstallLevel all`)
 
 #### ** Custom Configuration Creation**
 Create your own configurations by following the JSON schema:

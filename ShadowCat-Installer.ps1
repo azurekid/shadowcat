@@ -107,10 +107,10 @@ foreach ($moduleFile in $moduleFiles) {
 function Show-InstallLevelMenu {
     Write-Host "`nSelect Installation Level:" -ForegroundColor Cyan
     Write-Host "==========================" -ForegroundColor Cyan
-    Write-Host "1. Lite        - Minimal tools (core base + lite profile)" -ForegroundColor White
-    Write-Host "2. Standard    - Essential security tools (core + standard tools)" -ForegroundColor White
-    Write-Host "3. Professional- Complete toolkit (all tools + advanced features)" -ForegroundColor White
-    Write-Host "4. All         - Everything available (all configs)" -ForegroundColor White
+    Write-Host "1. Lite        - Minimal tools (core base + lite)" -ForegroundColor White
+    Write-Host "2. Standard    - Medium toolkit (core + lite + standard)" -ForegroundColor White
+    Write-Host "3. Professional- Advanced toolkit (core + lite + standard + professional)" -ForegroundColor White
+    Write-Host "4. All         - Everything available (all config options)" -ForegroundColor White
     Write-Host "0. Exit" -ForegroundColor Yellow
     Write-Host ""
     
@@ -130,9 +130,23 @@ function Show-InstallLevelMenu {
 function Show-ConfigSelectionMenu {
     param([string]$InstallLevel)
     
-    Write-Host "`nSelect Configuration Profile:" -ForegroundColor Cyan
-    Write-Host "==============================" -ForegroundColor Cyan
-    Write-Host "Note: Core Base will be automatically included" -ForegroundColor Green
+    # Set appropriate header based on install level
+    if ($InstallLevel -eq "standard") {
+        Write-Host "`nSelect Tool Configurations for Standard Level:" -ForegroundColor Cyan
+        Write-Host "========================================" -ForegroundColor Cyan
+        Write-Host "Note: Core Base will be automatically included" -ForegroundColor Green
+        Write-Host "Showing tools from lite and standard levels" -ForegroundColor Yellow
+    } elseif ($InstallLevel -eq "professional") {
+        Write-Host "`nSelect Tool Configurations for Professional Level:" -ForegroundColor Cyan
+        Write-Host "==============================================" -ForegroundColor Cyan
+        Write-Host "Note: Core Base will be automatically included" -ForegroundColor Green
+        Write-Host "Showing tools from lite, standard, and professional levels" -ForegroundColor Yellow
+    } else {
+        Write-Host "`nSelect Configuration Profile for $InstallLevel level:" -ForegroundColor Cyan
+        Write-Host "============================================" -ForegroundColor Cyan
+        Write-Host "Note: Core Base will be automatically included" -ForegroundColor Green
+        Write-Host "Showing $InstallLevel level configurations" -ForegroundColor Yellow
+    }
     Write-Host ""
     
     $configs = @{}
@@ -173,7 +187,7 @@ function Show-ConfigSelectionMenu {
                 $name = if ($content.metadata.name) { $content.metadata.name } else { $configFile.BaseName }
                 $category = if ($content.metadata.category) { $content.metadata.category } else { "Other" }
                 
-                # Filter configs based on install level
+                # Filter configs based on install level - include current and lower levels
                 $showConfig = switch ($InstallLevel) {
                     "lite" { $configLevel -eq "lite" }
                     "standard" { $configLevel -in @("lite", "standard") }
@@ -242,7 +256,17 @@ function Start-InteractiveInstallation {
                 break
             }
         } else {
-            # Look for profile config specific to this level first
+            # For 'all' level, get all available configs
+            if ($selectedLevel -eq "all") {
+                $configPath = Join-Path $PSScriptRoot "configs"
+                if (Test-Path $configPath) {
+                    $ConfigFiles = Get-ChildItem -Path $configPath -Filter "*.json" | Select-Object -ExpandProperty Name
+                    Write-ShadowCatLog "Selected all available configurations" -Level "Success"
+                    break
+                }
+            }
+            
+            # For other levels, look for profile config specific to this level first
             $profileName = "shadowcat-$($selectedLevel)-profile.json"
             $profilePath = Join-Path $PSScriptRoot "configs" $profileName
             
@@ -252,7 +276,23 @@ function Start-InteractiveInstallation {
                 Write-ShadowCatLog "Auto-selected profile for $selectedLevel level: $profileName" -Level "Success"
                 break
             } else {
-                # Otherwise show the menu
+                # No profile for this level or auto-selection disabled
+                if (($script:AutoSelectProfile -ne $false) -and -not (Test-Path $profilePath)) {
+                    # Provide appropriate messaging based on level
+                    switch ($selectedLevel) {
+                        "standard" { 
+                            Write-ShadowCatLog "Standard level includes lite + standard tools. Select the configurations you want:" -Level "Info" 
+                        }
+                        "professional" { 
+                            Write-ShadowCatLog "Professional level includes lite + standard + professional tools. Select the configurations you want:" -Level "Info" 
+                        }
+                        default {
+                            Write-ShadowCatLog "No profile found for $selectedLevel level, showing available configs..." -Level "Info"
+                        }
+                    }
+                }
+                
+                # Show the menu with configs specific to this level
                 $selectedConfigs = Show-ConfigSelectionMenu -InstallLevel $selectedLevel
                 if ($selectedConfigs) {
                     $ConfigFiles = $selectedConfigs
@@ -320,15 +360,43 @@ function Start-Installation {
             $script:InstallLevel = $selectedLevel
             Write-ShadowCatLog "Selected install level: $selectedLevel" -Level "Info"
             
+            # For 'all' level, get all available configs
             if ($selectedLevel -eq "all") {
-                # For "all", get all available configs
                 $configPath = Join-Path $PSScriptRoot "configs"
                 if (Test-Path $configPath) {
                     $ConfigFiles = Get-ChildItem -Path $configPath -Filter "*.json" | Select-Object -ExpandProperty Name
-                    Write-ShadowCatLog "Selected all available configurations: $($ConfigFiles -join ', ')" -Level "Success"
+                    Write-ShadowCatLog "Selected all available configurations" -Level "Success"
                     break
                 }
+            }
+            
+            # For other levels, look for profile config specific to this level first
+            $profileName = "shadowcat-$($selectedLevel)-profile.json"
+            $profilePath = Join-Path $PSScriptRoot "configs" $profileName
+            
+            if ((Test-Path $profilePath) -and ($script:AutoSelectProfile -ne $false)) {
+                # If a matching profile exists for this level, use it
+                $ConfigFiles = @($profileName)
+                Write-ShadowCatLog "Auto-selected profile for $selectedLevel level: $profileName" -Level "Success"
+                break
             } else {
+                # No profile for this level or auto-selection disabled
+                if (($script:AutoSelectProfile -ne $false) -and -not (Test-Path $profilePath)) {
+                    # Provide appropriate messaging based on level
+                    switch ($selectedLevel) {
+                        "standard" { 
+                            Write-ShadowCatLog "Standard level includes lite + standard tools. Select the configurations you want:" -Level "Info" 
+                        }
+                        "professional" { 
+                            Write-ShadowCatLog "Professional level includes lite + standard + professional tools. Select the configurations you want:" -Level "Info" 
+                        }
+                        default {
+                            Write-ShadowCatLog "No profile found for $selectedLevel level, showing available configs..." -Level "Info"
+                        }
+                    }
+                }
+                
+                # Show the menu with appropriate configs based on level
                 $selectedConfigs = Show-ConfigSelectionMenu -InstallLevel $selectedLevel
                 if ($selectedConfigs) {
                     $ConfigFiles = $selectedConfigs
@@ -403,6 +471,9 @@ function Start-Installation {
 
     # Create shortcuts to installed tools in category folders
     New-ToolShortcuts -ToolsBasePath (Join-Path $InstallPath "Tools")
+
+    # Generate HTML dashboard with installed tools
+    New-ToolDashboard -InstallPath $InstallPath -ConfigFiles $resolvedConfigs -InstallLevel $script:InstallLevel
 
     # Set custom desktop background (change URL as desired)
     $wallpaperUrl = "https://raw.githubusercontent.com/azurekid/shadowcat/main/docs/shadowcat_wallpaper.jpg"
