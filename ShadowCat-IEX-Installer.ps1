@@ -428,22 +428,23 @@ function Install-ScoopPackages {
                 [environment]::setEnvironmentVariable('SCOOP', $env:SCOOP, 'User')
                 
                 if ($isAdmin) {
-                    Write-ShadowCatLog "Running as admin. Using special Scoop installation method..." -Level "Warning"
+                    Write-ShadowCatLog "Running as admin. Using official Scoop admin installation method..." -Level "Warning"
                     
-                    # Special handling for admin installation
-                    $env:SCOOP_GLOBAL = "C:\ProgramData\scoop"
-                    [environment]::setEnvironmentVariable('SCOOP_GLOBAL', $env:SCOOP_GLOBAL, 'Machine')
+                    # Special handling for admin installation following official guidelines
+                    # https://github.com/ScoopInstaller/Install#for-admin
                     
-                    # Create user scoop directory if it doesn't exist
+                    # Set variables for admin installation
+                    $env:SCOOP = "C:\ProgramData\scoop"
+                    [environment]::setEnvironmentVariable('SCOOP', $env:SCOOP, 'Machine')
+                    
+                    # Create Scoop directory if it doesn't exist
                     if (-not (Test-Path $env:SCOOP)) {
                         New-Item -Path $env:SCOOP -ItemType Directory -Force | Out-Null
                     }
                     
-                    # Download and invoke the scoop installer with the -RunAsAdmin flag
+                    # Use the official admin installer
                     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-                    $scoopInstaller = (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
-                    $scoopInstaller = $scoopInstaller -replace 'if\s*\(\s*\$\(get_config\s+NO_PROXY\s*\)\s*-eq\s*\$true\)', 'if ($true)'
-                    Invoke-Expression $scoopInstaller
+                    Invoke-Expression "& {$(Invoke-RestMethod -Uri https://raw.githubusercontent.com/ScoopInstaller/Install/master/install.ps1)}"
                 }
                 else {
                     # Standard non-admin installation
