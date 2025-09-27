@@ -53,13 +53,6 @@
         "arguments": ""
       },
       {
-        "name": "7zip",
-        "description": "File archiver with high compression ratio",
-        "category": "Utilities",
-        "required": true,
-        "arguments": ""
-      },
-      {
         "name": "notepadplusplus",
         "description": "Source code editor and Notepad replacement",
         "category": "Editors",
@@ -81,29 +74,8 @@
         "arguments": ""
       },
       {
-        "name": "git",
-        "description": "Distributed version control system",
-        "category": "Development",
-        "required": true,
-        "arguments": ""
-      },
-      {
-        "name": "python3",
-        "description": "Python programming language",
-        "category": "Development",
-        "required": true,
-        "arguments": ""
-      },
-      {
         "name": "nodejs",
         "description": "JavaScript runtime built on Chrome's V8 JavaScript engine",
-        "category": "Development",
-        "required": true,
-        "arguments": ""
-      },
-      {
-        "name": "golang",
-        "description": "Go programming language",
         "category": "Development",
         "required": true,
         "arguments": ""
@@ -139,20 +111,6 @@
       {
         "name": "netcat",
         "description": "TCP/IP networking utility",
-        "category": "Network Tools",
-        "required": true,
-        "arguments": ""
-      },
-      {
-        "name": "curl",
-        "description": "Command line tool for transferring data",
-        "category": "Network Tools",
-        "required": true,
-        "arguments": ""
-      },
-      {
-        "name": "wget",
-        "description": "Network downloader",
         "category": "Network Tools",
         "required": true,
         "arguments": ""

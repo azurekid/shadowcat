@@ -39,7 +39,8 @@ function Install-ChocolateyPackages {
                 $isInstalled = $chocoList -match "^$($package.name)\|"
                 
                 if ($isInstalled) {
-                    Write-ShadowCatLog "$($package.name) is already installed, skipping." -Level "Info"
+                    Write-ShadowCatLog "$($package.name) is already installed via Chocolatey, skipping." -Level "Info"
+                    continue
                 } else {
                     # First check if package exists in repository
                     $searchResult = choco search $($package.name) --exact -r
@@ -81,6 +82,8 @@ function Install-ChocolateyPackages {
                         # Check if installation was successful
                         if ($output -match "0/\d+ packages failed" -or $output -match "installed 1/1") {
                             Write-ShadowCatLog "$($package.name) installed successfully." -Level "Success"
+                            $script:InstalledTools[$toolId] = "Chocolatey"
+                            $installedCount++
                         } else {
                             Write-ShadowCatLog "Installation of $($package.name) may have failed. Check logs for details." -Level "Warning"
                         }
@@ -90,11 +93,9 @@ function Install-ChocolateyPackages {
                 }
             } else {
                 Write-ShadowCatLog "[DRY RUN] Would install: choco install $($package.name) -y" -Level "Debug"
+                $script:InstalledTools[$toolId] = "Chocolatey"
+                $installedCount++
             }
-            
-            $script:InstalledTools[$toolId] = "Chocolatey"
-            $installedCount++
-            Write-ShadowCatLog "Successfully processed $($package.name)" -Level "Success"
         }
         catch {
             Write-ShadowCatLog "Failed to install $($package.name): $($_.Exception.Message)" -Level "Error"
