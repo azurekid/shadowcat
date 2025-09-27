@@ -181,7 +181,7 @@ function New-ToolShortcuts {
 
 # Export functions - Note: This line will be removed when running in IEX mode
 # The line below is needed only when this file is imported as a PowerShell module
-if ($MyInvocation.Line -notmatch 'IEX|Invoke-Expression' -and (Get-Command -Name Export-ModuleMember -ErrorAction SilentlyContinue)) {
-    # Only export if this is being loaded as a module (not via IEX)
+if ((Get-Command -Name Export-ModuleMember -ErrorAction SilentlyContinue) -and $MyInvocation.MyCommand.ModuleName) {
+    # Only export if this is being loaded as a module
     Export-ModuleMember -Function New-ToolCategoryFolders, New-ToolShortcuts, Set-DesktopBackground
 }
