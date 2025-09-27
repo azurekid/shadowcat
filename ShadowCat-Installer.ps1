@@ -103,6 +103,132 @@ foreach ($moduleFile in $moduleFiles) {
 }
 
 # Main installation function
+function Show-InstallLevelMenu {
+    Write-Host "`nSelect Installation Level:" -ForegroundColor Cyan
+    Write-Host "==========================" -ForegroundColor Cyan
+    Write-Host "1. Lite        - Minimal tools (git, python, basic utilities)" -ForegroundColor White
+    Write-Host "2. Standard    - Essential security tools (nmap, burp, etc.)" -ForegroundColor White
+    Write-Host "3. Professional- Complete toolkit (all tools + advanced features)" -ForegroundColor White
+    Write-Host "4. All         - Everything available" -ForegroundColor White
+    Write-Host "0. Exit" -ForegroundColor Yellow
+    Write-Host ""
+    
+    do {
+        $choice = Read-Host "Enter your choice (0-4)"
+        switch ($choice) {
+            "1" { return "lite" }
+            "2" { return "standard" }
+            "3" { return "professional" }
+            "4" { return "all" }
+            "0" { exit 0 }
+            default { Write-Host "Invalid choice. Please select 0-4." -ForegroundColor Red }
+        }
+    } while ($true)
+}
+
+function Show-ConfigSelectionMenu {
+    param([string]$InstallLevel)
+    
+    Write-Host "`nSelect Configuration Profile:" -ForegroundColor Cyan
+    Write-Host "==============================" -ForegroundColor Cyan
+    
+    $configs = @{}
+    $configPath = Join-Path $PSScriptRoot "configs"
+    
+    if (Test-Path $configPath) {
+        $configFiles = Get-ChildItem -Path $configPath -Filter "*.json"
+        $index = 1
+        
+        foreach ($configFile in $configFiles) {
+            try {
+                $content = Get-Content $configFile.FullName -Raw | ConvertFrom-Json
+                $configLevel = if ($content.metadata.installLevel) { $content.metadata.installLevel } else { "any" }
+                $name = if ($content.metadata.name) { $content.metadata.name } else { $configFile.BaseName }
+                $category = if ($content.metadata.category) { $content.metadata.category } else { "Other" }
+                
+                # Filter configs based on install level
+                $showConfig = switch ($InstallLevel) {
+                    "lite" { $configLevel -eq "lite" }
+                    "standard" { $configLevel -in @("lite", "standard") }
+                    "professional" { $configLevel -in @("lite", "standard", "professional") }
+                    "all" { $true }
+                    default { $true }
+                }
+                
+                if ($showConfig) {
+                    Write-Host "$index. $name" -ForegroundColor Yellow
+                    Write-Host "   Category: $category | Level: $configLevel" -ForegroundColor Gray
+                    $configs[$index] = $configFile.Name
+                    $index++
+                }
+            }
+            catch {
+                Write-Host "$index. $($configFile.BaseName) [INVALID JSON]" -ForegroundColor Red
+                $configs[$index] = $configFile.Name
+                $index++
+            }
+        }
+    }
+    
+    Write-Host "0. Back to Install Level Selection" -ForegroundColor Yellow
+    Write-Host ""
+    
+    do {
+        $choice = Read-Host "Enter your choice (0-$($configs.Count))"
+        if ($choice -eq "0") {
+            return $null
+        }
+        elseif ($configs.ContainsKey([int]$choice)) {
+            return @($configs[[int]$choice])
+        }
+        else {
+            Write-Host "Invalid choice. Please select 0-$($configs.Count)." -ForegroundColor Red
+        }
+    } while ($true)
+}
+
+function Start-InteractiveInstallation {
+    param([string[]]$ConfigFiles, [string]$InstallPath)
+
+    # If configs are already specified via command line, skip interactive mode
+    if ($ConfigFiles.Count -gt 0) {
+        Start-Installation -ConfigFiles $ConfigFiles -InstallPath $InstallPath
+        return
+    }
+
+    Show-ShadowCatBanner
+
+    # Interactive menu for config selection
+    Write-ShadowCatLog "No configuration files specified. Starting interactive selection..." -Level "Info"
+    
+    do {
+        $selectedLevel = Show-InstallLevelMenu
+        $script:InstallLevel = $selectedLevel
+        Write-ShadowCatLog "Selected install level: $selectedLevel" -Level "Info"
+        
+        if ($selectedLevel -eq "all") {
+            # For "all", get all available configs
+            $configPath = Join-Path $PSScriptRoot "configs"
+            if (Test-Path $configPath) {
+                $ConfigFiles = Get-ChildItem -Path $configPath -Filter "*.json" | Select-Object -ExpandProperty Name
+                Write-ShadowCatLog "Selected all available configurations: $($ConfigFiles -join ', ')" -Level "Success"
+                break
+            }
+        } else {
+            $selectedConfigs = Show-ConfigSelectionMenu -InstallLevel $selectedLevel
+            if ($selectedConfigs) {
+                $ConfigFiles = $selectedConfigs
+                Write-ShadowCatLog "Selected configuration: $($ConfigFiles -join ', ')" -Level "Success"
+                break
+            }
+            # If user chose "0. Back", loop continues
+        }
+    } while ($true)
+
+    # Now proceed with the actual installation
+    Start-Installation -ConfigFiles $ConfigFiles -InstallPath $InstallPath
+}
+
 function Start-Installation {
     param([string[]]$ConfigFiles, [string]$InstallPath)
 
@@ -147,9 +273,32 @@ function Start-Installation {
             return
         }
     } elseif ($ConfigFiles.Count -eq 0 -and -not $script:IsIEXMode) {
-        # Only show this warning for non-IEX mode
-        Write-ShadowCatLog "No configuration files specified. Use -ShowAvailableConfigs to see options." -Level "Warning"
-        return
+        # Interactive menu for config selection
+        Write-ShadowCatLog "No configuration files specified. Starting interactive selection..." -Level "Info"
+        
+        do {
+            $selectedLevel = Show-InstallLevelMenu
+            $script:InstallLevel = $selectedLevel
+            Write-ShadowCatLog "Selected install level: $selectedLevel" -Level "Info"
+            
+            if ($selectedLevel -eq "all") {
+                # For "all", get all available configs
+                $configPath = Join-Path $PSScriptRoot "configs"
+                if (Test-Path $configPath) {
+                    $ConfigFiles = Get-ChildItem -Path $configPath -Filter "*.json" | Select-Object -ExpandProperty Name
+                    Write-ShadowCatLog "Selected all available configurations: $($ConfigFiles -join ', ')" -Level "Success"
+                    break
+                }
+            } else {
+                $selectedConfigs = Show-ConfigSelectionMenu -InstallLevel $selectedLevel
+                if ($selectedConfigs) {
+                    $ConfigFiles = $selectedConfigs
+                    Write-ShadowCatLog "Selected configuration: $($ConfigFiles -join ', ')" -Level "Success"
+                    break
+                }
+                # If user chose "0. Back", loop continues
+            }
+        } while ($true)
     }
 
     Write-ShadowCatLog "Starting ShadowCat Installation..." -Level "Header"
@@ -247,4 +396,4 @@ if ($ShowAvailableConfigs) {
 }
 
 # Start the installation
-Start-Installation -ConfigFiles $ConfigFiles -InstallPath $InstallPath
+Start-InteractiveInstallation -ConfigFiles $ConfigFiles -InstallPath $InstallPath
