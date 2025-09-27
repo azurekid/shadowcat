@@ -206,6 +206,9 @@ function Start-Installation {
     # Create categorized tool folders after installation
     New-ToolCategoryFolders -BasePath (Join-Path $InstallPath "Tools")
 
+    # Create shortcuts to installed tools in category folders
+    New-ToolShortcuts -ToolsBasePath (Join-Path $InstallPath "Tools")
+
     # Set custom desktop background (change URL as desired)
     $wallpaperUrl = "https://raw.githubusercontent.com/azurekid/shadowcat/main/docs/shadowcat_wallpaper.jpg"
     Set-DesktopBackground -ImageUrl $wallpaperUrl

@@ -348,6 +348,32 @@ ShadowCat offers multiple installation methods to accommodate different environm
 
 For more detailed information, see the [BlackCat-Modular-Guide.md](BlackCat-Modular-Guide.md) file.
 
+### Tool Organization
+
+ShadowCat organizes installed tools in a structured directory layout for easy access:
+
+```
+C:\ShadowCat\SecurityTools\
+├── Tools\
+│   ├── Web Testing\        # Contains shortcuts to web testing tools
+│   │   ├── gobuster.lnk
+│   │   ├── ffuf.lnk
+│   │   └── sqlmap.lnk
+│   ├── Reconnaissance\     # Contains shortcuts to recon tools
+│   │   ├── subfinder.lnk
+│   │   └── amass.lnk
+│   └── [Other Categories]\
+└── [GitHub Projects]\      # Direct clones of GitHub repositories
+```
+
+**How it works:**
+- **Package Manager Tools** (Chocolatey/Scoop): Shortcuts are created in category folders pointing to the actual executables
+- **GitHub Projects**: Shortcuts created to open project directories or run executable files found within projects
+- **Python Packages**: Shortcuts created to run Python modules with `python -m module_name`
+- **Category Folders**: Only created for categories that have successfully installed tools
+
+This approach provides both **organized access** through shortcuts and **direct access** to full project repositories.
+
 ---
 
 ## Community & Contributions

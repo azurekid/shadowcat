@@ -57,7 +57,7 @@
         "arguments": ""
       },
       {
-        "name": "main/bulk-extractor",
+        "name": "extras/bulk-extractor",
         "description": "Scan digital evidence for useful information",
         "category": "Data Recovery",
         "required": true,

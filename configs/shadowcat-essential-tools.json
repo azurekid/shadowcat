@@ -209,8 +209,8 @@
       "nonportable"
     ],
     "packages": [
-      {
-        "name": "main/sqlmap",
+            {
+        "name": "extras/sqlmap",
         "description": "Automatic SQL injection and database takeover tool",
         "category": "Web Testing",
         "required": true,
@@ -231,16 +231,16 @@
         "arguments": ""
       },
       {
-        "name": "main/subfinder",
+        "name": "extras/subfinder",
         "description": "Subdomain discovery tool",
         "category": "Reconnaissance",
         "required": true,
         "arguments": ""
       },
       {
-        "name": "main/httpx",
+        "name": "extras/httpx",
         "description": "Fast and multi-purpose HTTP toolkit",
-        "category": "Reconnaissance",
+        "category": "Web Testing",
         "required": true,
         "arguments": ""
       },
@@ -259,23 +259,23 @@
         "arguments": ""
       },
       {
-        "name": "main/dnsx",
+        "name": "extras/dnsx",
         "description": "Fast and multi-purpose DNS toolkit",
         "category": "DNS Tools",
         "required": true,
         "arguments": ""
       },
       {
-        "name": "main/masscan",
+        "name": "extras/masscan",
         "description": "TCP port scanner, spews SYN packets asynchronously",
-        "category": "Network Scanning",
+        "category": "Port Scanning",
         "required": true,
         "arguments": ""
       },
       {
-        "name": "main/rustscan",
+        "name": "extras/rustscan",
         "description": "Modern port scanner",
-        "category": "Network Scanning",
+        "category": "Port Scanning",
         "required": true,
         "arguments": ""
       }

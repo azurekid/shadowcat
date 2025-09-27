@@ -2,7 +2,7 @@
 # Project ShadowCat - IEX-Compatible Installer
 # Self-contained version with all module code embedded for direct execution
 # ==============================================================================
-# 
+#
 # Author: Project ShadowCat Team
 # Version: 2.1.0
 # License: MIT License
@@ -124,7 +124,7 @@ function Show-InstallationSummary {
 
     Write-Host "`n🎯 NEXT STEPS:" -ForegroundColor Cyan
     Write-Host "   1. Restart PowerShell to activate ShadowCat profile" -ForegroundColor White
-    Write-Host "   2. Use 'bcat' command to navigate to tools" -ForegroundColor White  
+    Write-Host "   2. Use 'bcat' command to navigate to tools" -ForegroundColor White
     Write-Host "   3. Check tool-specific documentation for usage" -ForegroundColor White
     Write-Host "`n   Happy Hacking with ShadowCat! 🐱‍💻`n" -ForegroundColor Yellow
 }
@@ -135,7 +135,7 @@ function Show-InstallationSummary {
 
 function Import-ShadowCatConfig {
     param([string]$ConfigPath)
-    
+
     $fullPath = $ConfigPath
     $configContent = $null
 
@@ -193,33 +193,33 @@ function Import-ShadowCatConfig {
 
 function Resolve-ConfigDependencies {
     param([string[]]$ConfigFiles)
-    
+
     Write-ShadowCatLog "Resolving configuration dependencies..." -Level "Header"
-    
+
     $resolvedConfigs = @()
     $processingQueue = [System.Collections.Queue]::new()
-    
+
     # Add initial configs to queue
     foreach ($configFile in $ConfigFiles) {
         $processingQueue.Enqueue($configFile)
     }
-    
+
     while ($processingQueue.Count -gt 0) {
         $currentConfig = $processingQueue.Dequeue()
-        
+
         # Skip if already resolved
         if ($currentConfig -in $resolvedConfigs) {
             continue
         }
-        
+
         Write-ShadowCatLog "Processing dependencies for: $currentConfig" -Level "Dependency"
-        
+
         $config = Import-ShadowCatConfig -ConfigPath $currentConfig
         if ($null -eq $config) {
             Write-ShadowCatLog "Skipping invalid configuration: $currentConfig" -Level "Warning"
             continue
         }
-        
+
         # Check install level compatibility
         if ($config.metadata.installLevel) {
             $configLevel = $config.metadata.installLevel
@@ -230,13 +230,13 @@ function Resolve-ConfigDependencies {
                 "all" { $true }
                 default { $true }
             }
-            
+
             if (-not $isCompatible) {
                 Write-ShadowCatLog "Skipping $currentConfig - install level $configLevel not compatible with $($script:InstallLevel)" -Level "Warning"
                 continue
             }
         }
-        
+
         # Process dependencies first
         if ($config.metadata.dependencies) {
             foreach ($dependency in $config.metadata.dependencies) {
@@ -246,31 +246,31 @@ function Resolve-ConfigDependencies {
                 }
             }
         }
-        
+
         # Add current config to resolved list
         $resolvedConfigs += $currentConfig
         $script:DependencyChain += $currentConfig
     }
-    
+
     Write-ShadowCatLog "Dependency resolution complete. Processing order:" -Level "Success"
     foreach ($config in $resolvedConfigs) {
         Write-ShadowCatLog "  → $config" -Level "Info"
     }
-    
+
     return $resolvedConfigs
 }
 
 function Test-ToolInstallation {
     param($tool, $source)
-    
+
     # Check if tool has a unique ID
     $toolId = if ($tool.toolId) { $tool.toolId } else { $tool.name }
-    
+
     # Track tool category for folder organization
     if ($tool.category) {
         $script:ToolCategories[$toolId] = $tool.category
     }
-    
+
     # Check install level compatibility
     if ($tool.installLevel) {
         $toolLevel = $tool.installLevel
@@ -281,13 +281,13 @@ function Test-ToolInstallation {
             "all" { $true }
             default { $true }
         }
-        
+
         if (-not $isCompatible) {
             Write-ShadowCatLog "Skipping $($tool.name) - level $toolLevel not compatible with $($script:InstallLevel)" -Level "Debug"
             return $false
         }
     }
-    
+
     # Check for duplicates
     if ($script:InstalledTools.ContainsKey($toolId)) {
         $existingSource = $script:InstalledTools[$toolId]
@@ -299,7 +299,7 @@ function Test-ToolInstallation {
         }
         return $false
     }
-    
+
     return $true
 }
 
@@ -309,11 +309,11 @@ function Test-ToolInstallation {
 
 function Install-ChocolateyPackages {
     param($packages, $configName)
-    
+
     if (-not $packages -or $packages.Count -eq 0) { return }
-    
+
     Write-ShadowCatLog "Processing Chocolatey packages from $configName..." -Level "Header"
-    
+
     if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
         Write-ShadowCatLog "Installing Chocolatey package manager..." -Level "Info"
         if (-not $script:DryRun) {
@@ -322,26 +322,26 @@ function Install-ChocolateyPackages {
             Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
         }
     }
-    
+
     $installedCount = 0
     $skippedCount = 0
-    
+
     foreach ($package in $packages) {
         $toolId = if ($package.toolId) { $package.toolId } else { $package.name }
-        
+
         if (-not (Test-ToolInstallation -tool $package -source "Chocolatey")) {
             $skippedCount++
             continue
         }
-        
+
         try {
             Write-ShadowCatLog "Installing $($package.name) - $($package.description)" -Level "Info"
-            
+
             if (-not $script:DryRun) {
                 # Check if package is already installed
                 $chocoList = choco list --local-only $($package.name) -r
                 $isInstalled = $chocoList -match "^$($package.name)\|"
-                
+
                 if ($isInstalled) {
                     Write-ShadowCatLog "$($package.name) is already installed, skipping." -Level "Info"
                 } else {
@@ -350,7 +350,7 @@ function Install-ChocolateyPackages {
                     if (-not $searchResult) {
                         # Package not found in default repository
                         Write-ShadowCatLog "Package $($package.name) not found in default Chocolatey repository." -Level "Warning"
-                        
+
                         # Handle specific package alternatives
                         switch ($package.name) {
                             "john" {
@@ -377,11 +377,11 @@ function Install-ChocolateyPackages {
                             $installCmd += " $($package.arguments)"
                         }
                     }
-                    
+
                     # Execute the install command
                     try {
                         $output = Invoke-Expression $installCmd
-                        
+
                         # Check if installation was successful
                         if ($output -match "0/\d+ packages failed" -or $output -match "installed 1/1") {
                             Write-ShadowCatLog "$($package.name) installed successfully." -Level "Success"
@@ -395,7 +395,7 @@ function Install-ChocolateyPackages {
             } else {
                 Write-ShadowCatLog "[DRY RUN] Would install: choco install $($package.name) -y" -Level "Debug"
             }
-            
+
             $script:InstalledTools[$toolId] = "Chocolatey"
             $installedCount++
             Write-ShadowCatLog "Successfully processed $($package.name)" -Level "Success"
@@ -404,17 +404,17 @@ function Install-ChocolateyPackages {
             Write-ShadowCatLog "Failed to install $($package.name): $($_.Exception.Message)" -Level "Error"
         }
     }
-    
+
     Write-ShadowCatLog "Chocolatey summary: $installedCount installed, $skippedCount skipped" -Level "Info"
 }
 
 function Install-ScoopPackages {
     param($scoopConfig, $configName)
-    
+
     if (-not $scoopConfig -or $scoopConfig.packages.Count -eq 0) { return }
-    
+
     Write-ShadowCatLog "Processing Scoop packages from $configName..." -Level "Header"
-    
+
     # Ensure Scoop is installed
     if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
         Write-ShadowCatLog "Installing Scoop package manager..." -Level "Info"
@@ -422,27 +422,27 @@ function Install-ScoopPackages {
             try {
                 # Always use admin installation mode for consistency and reliability
                 Write-ShadowCatLog "Using Scoop admin installation mode..." -Level "Info"
-                
+
                 # Special handling for admin installation following official guidelines
                 # https://github.com/ScoopInstaller/Install#for-admin
-                
+
                 # Set variables for admin installation
                 $env:SCOOP = "C:\ProgramData\scoop"
                 [environment]::setEnvironmentVariable('SCOOP', $env:SCOOP, 'Machine')
-                
+
                 # Allow admin installations by setting the required environment variable
                 $env:SCOOP_ALLOW_ADMIN = "1"
                 [environment]::setEnvironmentVariable('SCOOP_ALLOW_ADMIN', '1', 'Machine')
-                
+
                 # Create Scoop directory if it doesn't exist
                 if (-not (Test-Path $env:SCOOP)) {
                     New-Item -Path $env:SCOOP -ItemType Directory -Force | Out-Null
                 }
-                
+
                 # Use the official admin installer with -RunAsAdmin parameter
                 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
                 Invoke-Expression "& {$(Invoke-RestMethod -Uri get.scoop.sh)} -RunAsAdmin"
-                
+
                 # Add the app directory to PATH to ensure scoop commands work immediately
                 $env:PATH = "$env:SCOOP\shims;$env:PATH"
             }
@@ -452,7 +452,7 @@ function Install-ScoopPackages {
             }
         }
     }
-    
+
     # Add required buckets
     if ($scoopConfig.buckets -and -not $script:DryRun) {
         foreach ($bucket in $scoopConfig.buckets) {
@@ -465,61 +465,69 @@ function Install-ScoopPackages {
             }
         }
     }
-    
+
     $installedCount = 0
     $skippedCount = 0
-    
+
     foreach ($package in $scoopConfig.packages) {
         $toolId = if ($package.toolId) { $package.toolId } else { $package.name }
-        
+
         if (-not (Test-ToolInstallation -tool $package -source "Scoop")) {
             $skippedCount++
             continue
         }
-        
+
         try {
             Write-ShadowCatLog "Installing $($package.name) - $($package.description)" -Level "Info"
-            
+
             if (-not $script:DryRun) {
-                scoop install $package.name
+                $installResult = scoop install $package.name 2>&1
+                $installOutput = $installResult | Out-String
+
+                # Check if installation was successful
+                if ($installOutput -match "was installed successfully") {
+                    $script:InstalledTools[$toolId] = "Scoop"
+                    $installedCount++
+                    Write-ShadowCatLog "Successfully processed $($package.name)" -Level "Success"
+                } else {
+                    Write-ShadowCatLog "Failed to install $($package.name): Package not found or installation failed" -Level "Error"
+                }
             } else {
                 Write-ShadowCatLog "[DRY RUN] Would install: scoop install $($package.name)" -Level "Debug"
+                $installedCount++
+                Write-ShadowCatLog "Successfully processed $($package.name)" -Level "Success"
             }
-            
-            $script:InstalledTools[$toolId] = "Scoop"
-            $installedCount++
-            Write-ShadowCatLog "Successfully processed $($package.name)" -Level "Success"
         }
         catch {
             Write-ShadowCatLog "Failed to install $($package.name): $($_.Exception.Message)" -Level "Error"
         }
     }
-    
+
     Write-ShadowCatLog "Scoop summary: $installedCount installed, $skippedCount skipped" -Level "Info"
 }
 
 function Install-GitHubProjects {
     param($projects, $basePath, $configName)
-    
+
     if (-not $projects -or $projects.Count -eq 0) { return }
-    
+
     Write-ShadowCatLog "Processing GitHub projects from $configName..." -Level "Header"
-    
+
     $installedCount = 0
     $skippedCount = 0
-    
+
     foreach ($project in $projects) {
         $toolId = if ($project.toolId) { $project.toolId } else { $project.name }
-        
+
         if (-not (Test-ToolInstallation -tool $project -source "GitHub")) {
             $skippedCount++
             continue
         }
-        
+
         try {
             $destination = Join-Path $basePath $project.destination
             Write-ShadowCatLog "Cloning $($project.name) - $($project.description)" -Level "Info"
-            
+
             if (-not $script:DryRun) {
                 if (Test-Path $destination) {
                     Write-ShadowCatLog "Directory exists, pulling latest changes for $($project.name)" -Level "Debug"
@@ -534,7 +542,7 @@ function Install-GitHubProjects {
             } else {
                 Write-ShadowCatLog "[DRY RUN] Would clone: $($project.url) to $destination" -Level "Debug"
             }
-            
+
             $script:InstalledTools[$toolId] = "GitHub"
             $installedCount++
             Write-ShadowCatLog "Successfully processed $($project.name)" -Level "Success"
@@ -543,37 +551,37 @@ function Install-GitHubProjects {
             Write-ShadowCatLog "Failed to clone $($project.name): $($_.Exception.Message)" -Level "Error"
         }
     }
-    
+
     Write-ShadowCatLog "GitHub summary: $installedCount installed, $skippedCount skipped" -Level "Info"
 }
 
 function Install-PythonPackages {
     param($packages, $configName)
-    
+
     if (-not $packages -or $packages.Count -eq 0) { return }
-    
+
     Write-ShadowCatLog "Processing Python packages from $configName..." -Level "Header"
-    
+
     $installedCount = 0
     $skippedCount = 0
-    
+
     foreach ($package in $packages) {
         $toolId = if ($package.toolId) { $package.toolId } else { "python-$($package.name)" }
-        
+
         if (-not (Test-ToolInstallation -tool $package -source "Python pip")) {
             $skippedCount++
             continue
         }
-        
+
         try {
             Write-ShadowCatLog "Installing Python package: $($package.name) - $($package.description)" -Level "Info"
-            
+
             if (-not $script:DryRun) {
                 python -m pip install $package.name
             } else {
                 Write-ShadowCatLog "[DRY RUN] Would install: python -m pip install $($package.name)" -Level "Debug"
             }
-            
+
             $script:InstalledTools[$toolId] = "Python pip"
             $installedCount++
             Write-ShadowCatLog "Successfully processed $($package.name)" -Level "Success"
@@ -582,7 +590,7 @@ function Install-PythonPackages {
             Write-ShadowCatLog "Failed to install $($package.name): $($_.Exception.Message)" -Level "Error"
         }
     }
-    
+
     Write-ShadowCatLog "Python summary: $installedCount installed, $skippedCount skipped" -Level "Info"
 }
 
@@ -593,14 +601,163 @@ function Install-PythonPackages {
 function New-ToolCategoryFolders {
     param([string]$BasePath)
     Write-ShadowCatLog "Creating categorized tool folders..." -Level "Header"
-    $categories = $script:ToolCategories.Values | Select-Object -Unique
-    foreach ($cat in $categories) {
+
+    # Only create folders for categories that have successfully installed tools
+    $installedCategories = @{}
+    foreach ($toolId in $script:InstalledTools.Keys) {
+        if ($script:ToolCategories.ContainsKey($toolId)) {
+            $category = $script:ToolCategories[$toolId]
+            $installedCategories[$category] = $true
+        }
+    }
+
+    foreach ($cat in $installedCategories.Keys) {
         $catFolder = Join-Path $BasePath $cat
         if (-not (Test-Path $catFolder)) {
             New-Item -Path $catFolder -ItemType Directory -Force | Out-Null
             Write-ShadowCatLog "Created folder: $catFolder" -Level "Success"
         }
     }
+
+    if ($installedCategories.Count -eq 0) {
+        Write-ShadowCatLog "No tool categories to create folders for" -Level "Info"
+    }
+}
+
+function New-ToolShortcuts {
+    param([string]$ToolsBasePath)
+    Write-ShadowCatLog "Creating tool shortcuts in category folders..." -Level "Header"
+
+    $shortcutsCreated = 0
+    foreach ($toolId in $script:InstalledTools.Keys) {
+        $toolSource = $script:InstalledTools[$toolId]
+        $toolCategory = $script:ToolCategories[$toolId]
+
+        if (-not $toolCategory) { continue }
+
+        $categoryFolder = Join-Path $ToolsBasePath $toolCategory
+        if (-not (Test-Path $categoryFolder)) { continue }
+
+        $toolName = $toolId -replace '^[^/]+/', ''  # Remove bucket prefix for display name
+        if ([string]::IsNullOrEmpty($toolName)) {
+            $toolName = $toolId  # Fallback if no bucket prefix
+        }
+        $shortcutPath = Join-Path $categoryFolder "$toolName.lnk"
+
+        # Skip if shortcut already exists
+        if (Test-Path $shortcutPath) { continue }
+
+        try {
+            $targetPath = $null
+            $workingDirectory = $null
+
+            switch ($toolSource) {
+                "Chocolatey" {
+                    # For Chocolatey, try to find the executable in common locations
+                    $chocoPath = "C:\ProgramData\chocolatey\bin\$toolName.exe"
+                    if (Test-Path $chocoPath) {
+                        $targetPath = $chocoPath
+                        $workingDirectory = "C:\ProgramData\chocolatey\bin"
+                    } else {
+                        # Try .cmd or .bat files
+                        $chocoCmdPath = "C:\ProgramData\chocolatey\bin\$toolName.cmd"
+                        if (Test-Path $chocoCmdPath) {
+                            $targetPath = $chocoCmdPath
+                            $workingDirectory = "C:\ProgramData\chocolatey\bin"
+                        }
+                    }
+                }
+                "Scoop" {
+                    # For Scoop, the executable should be in the scoop shims
+                    $scoopPath = "C:\ProgramData\scoop\shims\$toolName.exe"
+                    if (Test-Path $scoopPath) {
+                        $targetPath = $scoopPath
+                        $workingDirectory = "C:\ProgramData\scoop\shims"
+                    } else {
+                        # Try .cmd or .bat files
+                        $scoopCmdPath = "C:\ProgramData\scoop\shims\$toolName.cmd"
+                        if (Test-Path $scoopCmdPath) {
+                            $targetPath = $scoopCmdPath
+                            $workingDirectory = "C:\ProgramData\scoop\shims"
+                        }
+                    }
+                }
+                "GitHub" {
+                    # For GitHub projects, create a shortcut to the project directory
+                    # First try to find common executable files in the project
+                    $projectPath = Join-Path $ToolsBasePath $toolName
+                    if (Test-Path $projectPath) {
+                        # Look for common executable files
+                        $exeFiles = Get-ChildItem -Path $projectPath -Filter "*.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+                        if ($exeFiles) {
+                            $targetPath = $exeFiles.FullName
+                            $workingDirectory = $exeFiles.DirectoryName
+                        } else {
+                            # Look for Python scripts
+                            $pyFiles = Get-ChildItem -Path $projectPath -Filter "*.py" -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "^(main|run|app|cli|tool)\.py$" } | Select-Object -First 1
+                            if ($pyFiles) {
+                                $targetPath = "python.exe"
+                                $workingDirectory = $pyFiles.DirectoryName
+                                # Add arguments to run the Python script
+                                $arguments = $pyFiles.FullName
+                            } else {
+                                # No executable found, create shortcut to open the directory in Explorer
+                                $targetPath = "explorer.exe"
+                                $arguments = $projectPath
+                                $workingDirectory = $projectPath
+                            }
+                        }
+                    }
+                }
+                "Python pip" {
+                    # For Python packages, create shortcuts that run the module
+                    $pythonExe = (Get-Command python -ErrorAction SilentlyContinue).Source
+                    if ($pythonExe) {
+                        $targetPath = $pythonExe
+                        $workingDirectory = $env:USERPROFILE
+                        # Extract the actual package name (remove python- prefix if present)
+                        $pythonModule = $toolName -replace '^python-', ''
+                        $arguments = "-m $pythonModule"
+                    }
+                }
+            }
+
+            if ($targetPath -and (Test-Path $targetPath)) {
+                # Create Windows shortcut
+                $shell = New-Object -ComObject WScript.Shell
+                $shortcut = $shell.CreateShortcut($shortcutPath)
+                $shortcut.TargetPath = $targetPath
+                if ($arguments) {
+                    $shortcut.Arguments = $arguments
+                }
+                if ($workingDirectory) {
+                    $shortcut.WorkingDirectory = $workingDirectory
+                }
+                $shortcut.Description = "ShadowCat Tool: $toolName"
+                $shortcut.Save()
+
+                $shortcutsCreated++
+                Write-ShadowCatLog "Created shortcut: $toolName.lnk in $toolCategory" -Level "Success"
+            } elseif ($toolSource -eq "GitHub" -and $targetPath -eq "explorer.exe") {
+                # Special case for GitHub projects that open in Explorer
+                $shell = New-Object -ComObject WScript.Shell
+                $shortcut = $shell.CreateShortcut($shortcutPath)
+                $shortcut.TargetPath = $targetPath
+                $shortcut.Arguments = $arguments
+                $shortcut.WorkingDirectory = $workingDirectory
+                $shortcut.Description = "ShadowCat Tool: $toolName (Open Directory)"
+                $shortcut.Save()
+
+                $shortcutsCreated++
+                Write-ShadowCatLog "Created shortcut: $toolName.lnk in $toolCategory (opens directory)" -Level "Success"
+            }
+        }
+        catch {
+            Write-ShadowCatLog "Failed to create shortcut for $toolName`: $($_.Exception.Message)" -Level "Warning"
+        }
+    }
+
+    Write-ShadowCatLog "Created $shortcutsCreated tool shortcuts" -Level "Info"
 }
 
 function Set-DesktopBackground {
@@ -719,8 +876,11 @@ function Start-Installation {
     # Create categorized tool folders after installation
     New-ToolCategoryFolders -BasePath (Join-Path $InstallPath "Tools")
 
+    # Create shortcuts to installed tools in category folders
+    New-ToolShortcuts -ToolsBasePath (Join-Path $InstallPath "Tools")
+
     # Set custom desktop background (change URL as desired)
-    $wallpaperUrl = "https://raw.githubusercontent.com/azurekid/shadowcat/main/media/shadowcat_wallpaper.jpg"
+    $wallpaperUrl = "https://raw.githubusercontent.com/azurekid/shadowcat/main/media/shadowcat-wallpaper.png"
     Set-DesktopBackground -ImageUrl $wallpaperUrl
 
     # Show final summary
@@ -743,7 +903,7 @@ if ($ShowAvailableConfigs) {
                 $level = if ($content.metadata.installLevel) { $content.metadata.installLevel } else { "any" }
                 $name = if ($content.metadata.name) { $content.metadata.name } else { $config.BaseName }
                 $desc = if ($content.metadata.description) { $content.metadata.description } else { "No description" }
-                
+
                 Write-Host "  [$level] $($config.Name)" -NoNewline -ForegroundColor Yellow
                 Write-Host " - $name : $desc" -ForegroundColor White
             }

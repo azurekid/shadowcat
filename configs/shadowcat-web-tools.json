@@ -160,19 +160,6 @@
     ]
   },
   "python": {
-    "packages": [
-      {
-        "name": "commix",
-        "description": "Command injection exploitation tool",
-        "category": "Injection Testing",
-        "required": true
-      },
-      {
-        "name": "xsstrike",
-        "description": "Advanced XSS detection suite", 
-        "category": "XSS Testing",
-        "required": true
-      }
-    ]
+    "packages": []
   }
 }

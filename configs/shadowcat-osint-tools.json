@@ -22,12 +22,6 @@
         "required": true
       },
       {
-        "name": "maigret",
-        "description": "Username investigation tool",
-        "category": "Social Media",
-        "required": true
-      },
-      {
         "name": "twint",
         "description": "Twitter intelligence tool",
         "category": "Social Media",
@@ -36,37 +30,13 @@
       {
         "name": "h8mail",
         "description": "Email OSINT & password breach hunting",
-        "category": "Email Intelligence", 
+        "category": "Email Intelligence",
         "required": true
       },
       {
         "name": "phoneinfoga",
         "description": "Information gathering & OSINT framework for phone numbers",
         "category": "Phone Intelligence",
-        "required": true
-      },
-      {
-        "name": "sherlock-project",
-        "description": "Hunt down social media accounts by username",
-        "category": "Social Media",
-        "required": true
-      },
-      {
-        "name": "theHarvester",
-        "description": "E-mails, subdomains and names harvester",
-        "category": "Email Intelligence",
-        "required": true
-      },
-      {
-        "name": "osrframework",
-        "description": "OSINT research framework",
-        "category": "Frameworks",
-        "required": true
-      },
-      {
-        "name": "spiderfoot",
-        "description": "Automated reconnaissance tool",
-        "category": "Frameworks",
         "required": true
       }
     ]

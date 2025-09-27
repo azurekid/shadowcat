@@ -94,14 +94,6 @@
         "required": true,
         "installLevel": "lite",
         "toolId": "python-requests"
-      },
-      {
-        "name": "netexec",
-        "description": "Network execution toolkit for penetration testing (formerly CrackMapExec)",
-        "category": "Network Exploitation",
-        "required": true,
-        "installLevel": "lite",
-        "toolId": "python-netexec"
       }
     ]
   }

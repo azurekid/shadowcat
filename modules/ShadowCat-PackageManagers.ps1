@@ -175,14 +175,22 @@ function Install-ScoopPackages {
             Write-ShadowCatLog "Installing $($package.name) - $($package.description)" -Level "Info"
             
             if (-not $script:DryRun) {
-                scoop install $package.name
+                $installResult = scoop install $package.name 2>&1
+                $installOutput = $installResult | Out-String
+                
+                # Check if installation was successful
+                if ($installOutput -match "was installed successfully") {
+                    $script:InstalledTools[$toolId] = "Scoop"
+                    $installedCount++
+                    Write-ShadowCatLog "Successfully processed $($package.name)" -Level "Success"
+                } else {
+                    Write-ShadowCatLog "Failed to install $($package.name): Package not found or installation failed" -Level "Error"
+                }
             } else {
                 Write-ShadowCatLog "[DRY RUN] Would install: scoop install $($package.name)" -Level "Debug"
+                $installedCount++
+                Write-ShadowCatLog "Successfully processed $($package.name)" -Level "Success"
             }
-            
-            $script:InstalledTools[$toolId] = "Scoop"
-            $installedCount++
-            Write-ShadowCatLog "Successfully processed $($package.name)" -Level "Success"
         }
         catch {
             Write-ShadowCatLog "Failed to install $($package.name): $($_.Exception.Message)" -Level "Error"
