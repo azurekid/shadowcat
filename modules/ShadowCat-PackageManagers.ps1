@@ -135,9 +135,9 @@ function Install-ScoopPackages {
                     New-Item -Path $env:SCOOP -ItemType Directory -Force | Out-Null
                 }
                 
-                # Use the official admin installer
+                # Use the official admin installer with -RunAsAdmin parameter
                 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-                Invoke-Expression "& {$(Invoke-RestMethod -Uri https://raw.githubusercontent.com/ScoopInstaller/Install/master/install.ps1)}"                # Add the app directory to PATH to ensure scoop commands work immediately
+                Invoke-Expression "& {$(Invoke-RestMethod -Uri get.scoop.sh)} -RunAsAdmin"                # Add the app directory to PATH to ensure scoop commands work immediately
                 $env:PATH = "$env:SCOOP\shims;$env:PATH"
             }
             catch {
