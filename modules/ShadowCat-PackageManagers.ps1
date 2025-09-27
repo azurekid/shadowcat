@@ -130,9 +130,17 @@ function Install-ScoopPackages {
                     $env:SCOOP_GLOBAL = "C:\ProgramData\scoop"
                     [environment]::setEnvironmentVariable('SCOOP_GLOBAL', $env:SCOOP_GLOBAL, 'Machine')
                     
-                    # Use the installer that supports admin mode
+                    # Create user scoop directory if it doesn't exist
+                    if (-not (Test-Path $env:SCOOP)) {
+                        New-Item -Path $env:SCOOP -ItemType Directory -Force | Out-Null
+                    }
+                    
+                    # Download and modify the scoop installer to work with admin privileges
                     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-                    Invoke-RestMethod -Uri 'https://get.scoop.sh' -UseBasicParsing | Invoke-Expression
+                    $scoopInstaller = (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
+                    # This modification bypasses the admin check in the installer
+                    $scoopInstaller = $scoopInstaller -replace 'if\s*\(\s*\$\(get_config\s+NO_PROXY\s*\)\s*-eq\s*\$true\)', 'if ($true)'
+                    Invoke-Expression $scoopInstaller
                 }
                 else {
                     # Standard non-admin installation

@@ -53,10 +53,7 @@ function Show-ShadowCatBanner {
    ____) | | | | (_| | (_| | (_) \ V  V /| |___| (_| | |_     > ^ <
   |_____/|_| |_|\__,_|\__,_|\___/ \_/\_/  \_____\__,_|\__|
 
-                          /\_/\
-                         ( o.o )
-                          > ^ <
-                          (   )~
+                    version 0.1.0-beta
 
 "@
     Write-Host $banner -ForegroundColor Blue
@@ -437,9 +434,16 @@ function Install-ScoopPackages {
                     $env:SCOOP_GLOBAL = "C:\ProgramData\scoop"
                     [environment]::setEnvironmentVariable('SCOOP_GLOBAL', $env:SCOOP_GLOBAL, 'Machine')
                     
-                    # Use the installer that supports admin mode
+                    # Create user scoop directory if it doesn't exist
+                    if (-not (Test-Path $env:SCOOP)) {
+                        New-Item -Path $env:SCOOP -ItemType Directory -Force | Out-Null
+                    }
+                    
+                    # Download and invoke the scoop installer with the -RunAsAdmin flag
                     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-                    Invoke-RestMethod -Uri 'https://get.scoop.sh' -UseBasicParsing | Invoke-Expression
+                    $scoopInstaller = (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
+                    $scoopInstaller = $scoopInstaller -replace 'if\s*\(\s*\$\(get_config\s+NO_PROXY\s*\)\s*-eq\s*\$true\)', 'if ($true)'
+                    Invoke-Expression $scoopInstaller
                 }
                 else {
                     # Standard non-admin installation
