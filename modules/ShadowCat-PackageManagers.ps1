@@ -116,39 +116,28 @@ function Install-ScoopPackages {
         Write-ShadowCatLog "Installing Scoop package manager..." -Level "Info"
         if (-not $script:DryRun) {
             try {
-                # Check if running as admin
-                $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+                # Always use admin installation mode for consistency and reliability
+                Write-ShadowCatLog "Using Scoop admin installation mode..." -Level "Info"
                 
-                # Set environment variables regardless of admin status
-                $env:SCOOP = Join-Path $env:USERPROFILE "scoop"
-                [environment]::setEnvironmentVariable('SCOOP', $env:SCOOP, 'User')
+                # Special handling for admin installation following official guidelines
+                # https://github.com/ScoopInstaller/Install#for-admin
                 
-                if ($isAdmin) {
-                    Write-ShadowCatLog "Running as admin. Using official Scoop admin installation method..." -Level "Warning"
-                    
-                    # Special handling for admin installation following official guidelines
-                    # https://github.com/ScoopInstaller/Install#for-admin
-                    
-                    # Set variables for admin installation
-                    $env:SCOOP = "C:\ProgramData\scoop"
-                    [environment]::setEnvironmentVariable('SCOOP', $env:SCOOP, 'Machine')
-                    
-                    # Create Scoop directory if it doesn't exist
-                    if (-not (Test-Path $env:SCOOP)) {
-                        New-Item -Path $env:SCOOP -ItemType Directory -Force | Out-Null
-                    }
-                    
-                    # Use the official admin installer
-                    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-                    Invoke-Expression "& {$(Invoke-RestMethod -Uri https://raw.githubusercontent.com/ScoopInstaller/Install/master/install.ps1)}"
-                }
-                else {
-                    # Standard non-admin installation
-                    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-                    Invoke-RestMethod -Uri 'https://get.scoop.sh' | Invoke-Expression
+                # Set variables for admin installation
+                $env:SCOOP = "C:\ProgramData\scoop"
+                [environment]::setEnvironmentVariable('SCOOP', $env:SCOOP, 'Machine')
+                
+                # Allow admin installations by setting the required environment variable
+                $env:SCOOP_ALLOW_ADMIN = "1"
+                [environment]::setEnvironmentVariable('SCOOP_ALLOW_ADMIN', '1', 'Machine')
+                
+                # Create Scoop directory if it doesn't exist
+                if (-not (Test-Path $env:SCOOP)) {
+                    New-Item -Path $env:SCOOP -ItemType Directory -Force | Out-Null
                 }
                 
-                # Add the app directory to PATH to ensure scoop commands work immediately
+                # Use the official admin installer
+                Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+                Invoke-Expression "& {$(Invoke-RestMethod -Uri https://raw.githubusercontent.com/ScoopInstaller/Install/master/install.ps1)}"                # Add the app directory to PATH to ensure scoop commands work immediately
                 $env:PATH = "$env:SCOOP\shims;$env:PATH"
             }
             catch {
