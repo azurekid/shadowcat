@@ -1,4 +1,4 @@
-# ==============================================================================
+# ============================================
 # Project ShadowCat - Modular Security Toolkit
 # Advanced installer with dependency management and overlap prevention
 # ==============================================================================
@@ -33,6 +33,7 @@ $script:ProcessedConfigs = @{}
 $script:InstalledTools = @{}
 $script:SkippedTools = @{}
 $script:DependencyChain = @()
+$script:AutoSelectProfile = $true
 $script:IsIEXMode = ($null -eq $PSScriptRoot -or $PSScriptRoot -eq '')
 
 # Set a global variable to inform module files that we're in IEX mode
@@ -106,10 +107,10 @@ foreach ($moduleFile in $moduleFiles) {
 function Show-InstallLevelMenu {
     Write-Host "`nSelect Installation Level:" -ForegroundColor Cyan
     Write-Host "==========================" -ForegroundColor Cyan
-    Write-Host "1. Lite        - Minimal tools (git, python, basic utilities)" -ForegroundColor White
-    Write-Host "2. Standard    - Essential security tools (nmap, burp, etc.)" -ForegroundColor White
+    Write-Host "1. Lite        - Minimal tools (core base + lite profile)" -ForegroundColor White
+    Write-Host "2. Standard    - Essential security tools (core + standard tools)" -ForegroundColor White
     Write-Host "3. Professional- Complete toolkit (all tools + advanced features)" -ForegroundColor White
-    Write-Host "4. All         - Everything available" -ForegroundColor White
+    Write-Host "4. All         - Everything available (all configs)" -ForegroundColor White
     Write-Host "0. Exit" -ForegroundColor Yellow
     Write-Host ""
     
@@ -131,6 +132,8 @@ function Show-ConfigSelectionMenu {
     
     Write-Host "`nSelect Configuration Profile:" -ForegroundColor Cyan
     Write-Host "==============================" -ForegroundColor Cyan
+    Write-Host "Note: Core Base will be automatically included" -ForegroundColor Green
+    Write-Host ""
     
     $configs = @{}
     $configPath = Join-Path $PSScriptRoot "configs"
@@ -139,8 +142,28 @@ function Show-ConfigSelectionMenu {
         $configFiles = Get-ChildItem -Path $configPath -Filter "*.json"
         $index = 1
         
+        # Show the profile option first if it exists for this level
+        $profileName = "shadowcat-$($InstallLevel)-profile.json"
+        $profileConfig = $configFiles | Where-Object { $_.Name -eq $profileName }
+        
+        if ($profileConfig) {
+            try {
+                $content = Get-Content $profileConfig.FullName -Raw | ConvertFrom-Json
+                $name = if ($content.metadata.name) { $content.metadata.name } else { $profileConfig.BaseName }
+                $category = if ($content.metadata.category) { $content.metadata.category } else { "Profile" }
+                
+                Write-Host "$index. $name (Recommended)" -ForegroundColor Green
+                Write-Host "   Category: $category | Level: $InstallLevel" -ForegroundColor Gray
+                $configs[$index] = $profileConfig.Name
+                $index++
+            }
+            catch {}
+        }
+        
+        # Now add other appropriate configs
         foreach ($configFile in $configFiles) {
-            if ($configFile.Name -eq "shadowcat-core-base.json") {
+            # Skip core base and the already added profile
+            if ($configFile.Name -eq "shadowcat-core-base.json" -or $configFile.Name -eq $profileName) {
                 continue
             }
             
@@ -219,13 +242,25 @@ function Start-InteractiveInstallation {
                 break
             }
         } else {
-            $selectedConfigs = Show-ConfigSelectionMenu -InstallLevel $selectedLevel
-            if ($selectedConfigs) {
-                $ConfigFiles = $selectedConfigs
-                Write-ShadowCatLog "Selected configuration: $($ConfigFiles -join ', ')" -Level "Success"
+            # Look for profile config specific to this level first
+            $profileName = "shadowcat-$($selectedLevel)-profile.json"
+            $profilePath = Join-Path $PSScriptRoot "configs" $profileName
+            
+            if ((Test-Path $profilePath) -and ($script:AutoSelectProfile -ne $false)) {
+                # If a matching profile exists for this level, use it
+                $ConfigFiles = @($profileName)
+                Write-ShadowCatLog "Auto-selected profile for $selectedLevel level: $profileName" -Level "Success"
                 break
+            } else {
+                # Otherwise show the menu
+                $selectedConfigs = Show-ConfigSelectionMenu -InstallLevel $selectedLevel
+                if ($selectedConfigs) {
+                    $ConfigFiles = $selectedConfigs
+                    Write-ShadowCatLog "Selected configuration: $($ConfigFiles -join ', ')" -Level "Success"
+                    break
+                }
+                # If user chose "0. Back", loop continues
             }
-            # If user chose "0. Back", loop continues
         }
     } while ($true)
 
